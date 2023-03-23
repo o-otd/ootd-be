@@ -1,0 +1,14 @@
+logging:
+  level:
+    root: debug
+    org.springframework.security: debug
+    org.springdoc: debug
+    com.ootd.be: debug
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /api-docs
+  show-actuator: true
+  default-produces-media-type: application/json
