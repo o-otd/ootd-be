@@ -1,5 +1,6 @@
 package com.ootd.be.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -19,15 +20,13 @@ public class Feeditem {
     @Enumerated(EnumType.STRING)
     private FeedItemType type;
 
-    // 이미지 업로드 경로
-    private String imagePath;
-
-    // 무신사 api 정보
-    private String productId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feed_id")
     private Feed feed;
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "product_id")
+    private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")

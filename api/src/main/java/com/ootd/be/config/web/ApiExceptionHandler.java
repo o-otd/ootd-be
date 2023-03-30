@@ -4,27 +4,24 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.ootd.be.api.ApiResponse;
+import com.ootd.be.api.auth.ApiResponse;
+import com.ootd.be.exception.ValidationException;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RestControllerAdvice
+//@RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(value = { Throwable.class })
-    protected ApiResponse handleException(Throwable e) {
-        logger.error(e);
-
-        if (log.isDebugEnabled()) {
-            e.printStackTrace();
-        }
-
-        if (e.getCause() == null) {
-            return ApiResponse.fail("{}({})", e.getClass().getSimpleName(), e.getMessage());
-        } else {
-            return ApiResponse.fail("{}({})", e.getCause().getClass().getSimpleName(), e.getMessage());
-        }
-    }
+//    @ExceptionHandler(value = { ValidationException.class })
+//    protected ApiResponse handleException(Throwable e) {
+//        logger.error(e);
+//
+//        if (log.isDebugEnabled()) {
+//            e.printStackTrace();
+//        }
+//
+//        return ApiResponse.ok();
+//    }
 
 }

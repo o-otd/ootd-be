@@ -1,4 +1,4 @@
-package com.ootd.be.api;
+package com.ootd.be.api.auth;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

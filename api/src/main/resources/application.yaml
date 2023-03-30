@@ -11,6 +11,7 @@ logging:
     root: info
     org.springframework.security: debug
     org.springdoc: debug
+    org.hibernate.SQL: debug
     com.ootd.be: debug
 
 jwt:
@@ -26,3 +27,21 @@ springdoc:
     path: /api-docs
   show-actuator: true
   default-produces-media-type: application/json
+
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: create
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:60001/ootd
+    username: ootd
+    password: ootd!@#123!@#
+

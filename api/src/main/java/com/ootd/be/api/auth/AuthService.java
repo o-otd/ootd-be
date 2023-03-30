@@ -1,4 +1,4 @@
-package com.ootd.be.api;
+package com.ootd.be.api.auth;
 
 import java.util.Date;
 import java.util.Set;
@@ -6,12 +6,11 @@ import java.util.Set;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ootd.be.api.AuthController.JoinReqDto;
-import com.ootd.be.api.AuthController.LoginReqDto;
+import com.ootd.be.api.auth.AuthController.JoinReqDto;
+import com.ootd.be.api.auth.AuthController.LoginReqDto;
 import com.ootd.be.config.security.jwt.JwtToken;
 import com.ootd.be.config.security.jwt.JwtTokenProvider;
 import com.ootd.be.config.security.jwt.TokenRepository;
@@ -36,12 +35,11 @@ public class AuthService {
     private final TokenRepository tokenRepository;
 
     public void join(JoinReqDto dto) {
-        Member member = new Member() {{
-            setEmail(dto.getEmail());
-            setName(dto.getName());
-            setPassword(passwordEncoder.encode(dto.getPassword()));
-            setAuthorities(Set.of(Authority.ROLE_USER));
-        }};
+        Member member = new Member();
+        member.setEmail(dto.getEmail());
+        member.setName(dto.getName());
+        member.setPassword(passwordEncoder.encode(dto.getPassword()));
+        member.setAuthority(Authority.ROLE_USER);
 
         memberRepository.save(member);
     }

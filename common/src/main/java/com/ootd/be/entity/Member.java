@@ -1,13 +1,14 @@
 package com.ootd.be.entity;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
+import lombok.ToString.Exclude;
 
 @Data
 @Entity
@@ -21,9 +22,20 @@ public class Member {
 
     private String password;
 
-    private Set<Authority> authorities = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    private Authority authority;
 
+    @Exclude
     @OneToMany
     private List<Feed> feeds;
+
+    @Exclude
+    @OneToMany(mappedBy = "member")
+    private List<FeedLike> feedLikes;
+
+    @Exclude
+    @OneToMany(mappedBy = "member")
+    private List<FeedBookmark> feedBookmarks;
+
 
 }

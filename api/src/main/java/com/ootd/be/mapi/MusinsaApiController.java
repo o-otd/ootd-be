@@ -1,15 +1,16 @@
 package com.ootd.be.mapi;
 
-import java.util.PrimitiveIterator;
+import java.util.List;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ootd.be.api.ApiResponse;
+import com.ootd.be.api.auth.ApiResponse;
+import com.ootd.be.mapi.MusinsaDto.Goods;
+import com.ootd.be.mapi.MusinsaDto.SearchReq;
 
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -19,14 +20,9 @@ public class MusinsaApiController {
 
     private final MusinsaApiService mApiService;
 
-    @Data
-    public static class MusinsaSearchReqDto {
-        private String keyword;
-    }
-
     @PostMapping("search")
-    public ApiResponse<MusinsaApiRes> search(@RequestBody MusinsaSearchReqDto data) {
-        return ApiResponse.ok(mApiService.search(data.getKeyword()));
+    public ApiResponse<List<Goods>> search(@RequestBody SearchReq data) {
+        return ApiResponse.ok(mApiService.search(data.getKeyword(), data.getCategory()));
     }
 
 }

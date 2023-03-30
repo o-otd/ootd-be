@@ -27,16 +27,32 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // spring docs
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4")
+
+    // cache
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-cache
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.5")
+
+    // DB
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    // https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.1.3")
 
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
+    // lombok
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+    testCompileOnly("org.projectlombok:lombok")
+    testAnnotationProcessor("org.projectlombok:lombok")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 

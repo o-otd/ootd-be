@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.ootd.be.config.security.CustomGrantedAuthority;
+import com.ootd.be.entity.Member;
 import com.ootd.be.exception.ValidationException;
 import com.ootd.be.util.web.SpringWebUtil;
 
@@ -30,7 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class JwtTokenProvider {
 
-    private static final String AUTHORITIES_KEY = "auth";
+    private enum claimKey {
+        AUTH, USERNAME,
+    }
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String TOKEN_PREFIX = "Bearer ";
@@ -51,7 +54,7 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
 
-        String auths = (String) claims.getOrDefault(AUTHORITIES_KEY, "");
+        String auths = (String) claims.getOrDefault(claimKey.AUTH.name(), "");
         if (!StringUtils.hasText(auths)) {
             throw new IllegalStateException("No Authority Info.");
         }
@@ -60,7 +63,9 @@ public class JwtTokenProvider {
                                                    .map(CustomGrantedAuthority::of)
                                                    .collect(Collectors.toList());
 
-        return new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
+        authenticationToken.setDetails(claims.get(claimKey.USERNAME.name()));
+        return authenticationToken;
     }
 
     public JwtToken createAccessToken(Authentication authentication) {
@@ -70,7 +75,9 @@ public class JwtTokenProvider {
         String auths = authentication.getAuthorities().stream()
                                      .map(GrantedAuthority::getAuthority)
                                      .collect(Collectors.joining(","));
-        claims.put(AUTHORITIES_KEY, auths);
+
+        claims.put(claimKey.AUTH.name(), auths);
+        claims.put(claimKey.USERNAME.name(), authentication.getDetails());
 
         long now = System.currentTimeMillis();
 

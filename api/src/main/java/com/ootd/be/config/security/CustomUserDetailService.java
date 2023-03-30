@@ -6,7 +6,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.ootd.be.entity.Authority;
 import com.ootd.be.entity.Member;
 import com.ootd.be.entity.MemberRepository;
 
@@ -27,7 +26,7 @@ public class CustomUserDetailService implements UserDetailsService {
         return User.builder()
                    .username(member.getEmail())
                    .password(member.getPassword())
-                   .roles(member.getAuthorities().stream().map(a -> a.role).toArray(String[]::new))
+                   .roles(member.getAuthority().role)
                    .build();
     }
 

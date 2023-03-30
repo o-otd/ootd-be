@@ -2,6 +2,7 @@ package com.ootd.be.entity;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -20,13 +21,17 @@ public class Feed {
     private String title;
     private String contents;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.PERSIST)
     private List<Feeditem> items;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
+    @OneToMany(mappedBy = "feed")
+    private List<FeedLike> feedLikes;
 
+    @OneToMany(mappedBy = "feed")
+    private List<FeedBookmark> feedBookmarks;
 
 }

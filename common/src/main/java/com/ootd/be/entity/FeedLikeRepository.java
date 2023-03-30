@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
 
-    Optional<Member> findByEmail(String email);
+    Optional<FeedLike> findByMemberAndFeed(Member member, Feed feed);
 
 }
