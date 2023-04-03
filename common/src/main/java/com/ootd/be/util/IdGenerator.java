@@ -34,7 +34,7 @@ public class IdGenerator {
 
     public Long next() {
         if (prefix == null) {
-            OotdSeq max = ootdSeqRepository.findById(idSeq).orElse(newSeq());
+            OotdSeq max = ootdSeqRepository.findById(idSeq).orElseGet(this::newSeq);
             prefix.set(max.getSeq());
             max.setSeq(prefix.incrementAndGet());
         }

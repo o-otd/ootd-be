@@ -25,8 +25,10 @@ public class Member {
     @Enumerated(EnumType.STRING)
     private Authority authority;
 
+
+
     @Exclude
-    @OneToMany
+    @OneToMany(mappedBy = "member")
     private List<Feed> feeds;
 
     @Exclude

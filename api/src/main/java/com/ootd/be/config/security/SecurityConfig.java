@@ -1,5 +1,6 @@
 package com.ootd.be.config.security;
 
+import com.ootd.be.config.web.ApiExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,8 +22,11 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
+    private final ApiExceptionHandler exceptionHandler;
+    private final DelegatedAuthenticationEntryPoint authenticationEntryPoint;
 
     private static final String[] AUTH_WHITELIST = {
+            "/error",
             "/auth/join",
             "/auth/login",
             "/auth/refresh",
@@ -43,6 +47,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(AUTH_WHITELIST).permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(configurer -> configurer
+                        .accessDeniedHandler(exceptionHandler)
+                        .authenticationEntryPoint(authenticationEntryPoint)
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
                 .build();

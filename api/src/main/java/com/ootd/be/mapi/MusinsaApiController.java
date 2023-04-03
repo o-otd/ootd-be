@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ootd.be.api.auth.ApiResponse;
+import com.ootd.be.api.ApiResponse;
 import com.ootd.be.mapi.MusinsaDto.Goods;
 import com.ootd.be.mapi.MusinsaDto.SearchReq;
 

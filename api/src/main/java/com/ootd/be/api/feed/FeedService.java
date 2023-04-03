@@ -51,7 +51,7 @@ public class FeedService {
 
         Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new ValidationException("피드 정보를 찾을 수 없음"));
 
-        FeedLike feedLike = feedLikeRepository.findByMemberAndFeed(member, feed).orElse(new FeedLike());
+        FeedLike feedLike = feedLikeRepository.findByMemberAndFeed(member, feed).orElseGet(FeedLike::new);
         if (feedLike.getId() != null) return;
 
         feedLike.setId(IdGenerator.I.next());
@@ -67,7 +67,7 @@ public class FeedService {
 
         Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new ValidationException("피드 정보를 찾을 수 없음"));
 
-        FeedLike feedLike = feedLikeRepository.findByMemberAndFeed(member, feed).orElse(new FeedLike());
+        FeedLike feedLike = feedLikeRepository.findByMemberAndFeed(member, feed).orElseGet(FeedLike::new);
         if (feedLike.getId() == null) return;
 
         feedLikeRepository.delete(feedLike);
@@ -80,7 +80,7 @@ public class FeedService {
 
         Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new ValidationException("피드 정보를 찾을 수 없음"));
 
-        FeedBookmark bookmark = feedBookmarkRepository.findByMemberAndFeed(member, feed).orElse(new FeedBookmark());
+        FeedBookmark bookmark = feedBookmarkRepository.findByMemberAndFeed(member, feed).orElseGet(FeedBookmark::new);
         if (bookmark.getId() != null) return;
 
         bookmark.setId(IdGenerator.I.next());
@@ -96,7 +96,7 @@ public class FeedService {
 
         Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new ValidationException("피드 정보를 찾을 수 없음"));
 
-        FeedBookmark bookmark = feedBookmarkRepository.findByMemberAndFeed(member, feed).orElse(new FeedBookmark());
+        FeedBookmark bookmark = feedBookmarkRepository.findByMemberAndFeed(member, feed).orElseGet(FeedBookmark::new);
         if (bookmark.getId() == null) return;
 
         feedBookmarkRepository.delete(bookmark);
@@ -131,7 +131,7 @@ public class FeedService {
         if (items.isEmpty()) {return null;}
 
         List<Feeditem> feeditems = items.stream().map(item ->
-                                                            productRepository.findByMallCodeAndGoodsNo(MallCode.musinsa, item.getGoodsNo().toString()).orElse(toProduct(item))
+                                                            productRepository.findByMallCodeAndGoodsNo(MallCode.musinsa, item.getGoodsNo().toString()).orElseGet(() -> toProduct(item))
                                       )
                                       .map(product -> {
                                           Feeditem feeditem = new Feeditem();

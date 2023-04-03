@@ -1,17 +1,14 @@
 package com.ootd.be.api.auth;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.ootd.be.api.ApiResponse;
 import com.ootd.be.config.security.jwt.JwtToken;
-
+import com.ootd.be.config.swagger.SwaggerConfig;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -48,9 +45,9 @@ public class AuthController {
         return ApiResponse.ok(accessToken);
     }
 
+    @Operation(security = {@SecurityRequirement(name = SwaggerConfig.SCHEME)})
     @PostMapping("refresh")
-    public ApiResponse refresh(@RequestHeader("Authorization") String authorization) {
-        log.debug("auth : {}", authorization);
+    public ApiResponse refresh() {
         JwtToken accessToken = authService.refresh();
         return ApiResponse.ok(accessToken);
     }

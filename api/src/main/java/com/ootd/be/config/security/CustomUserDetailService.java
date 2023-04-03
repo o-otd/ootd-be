@@ -1,5 +1,7 @@
 package com.ootd.be.config.security;
 
+import com.ootd.be.config.security.exception.OotdAuthenticationException;
+import com.ootd.be.util.StringUtil;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,7 +21,7 @@ public class CustomUserDetailService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return memberRepository.findByEmail(username).map(this::createUserDetails).orElseThrow(() -> new UsernameNotFoundException(username));
+        return memberRepository.findByEmail(username).map(this::createUserDetails).orElseThrow(() -> new OotdAuthenticationException("사용자 정보 없음"));
     }
 
     private UserDetails createUserDetails(Member member) {

@@ -1,11 +1,16 @@
 package com.ootd.be.config.security.jwt;
 
-import java.security.Key;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.ootd.be.config.security.CustomGrantedAuthority;
+import com.ootd.be.config.security.exception.OotdAuthenticationException;
+import com.ootd.be.exception.ValidationException;
+import com.ootd.be.util.web.SpringWebUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,18 +19,11 @@ import org.springframework.security.core.token.Sha512DigestUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import com.ootd.be.config.security.CustomGrantedAuthority;
-import com.ootd.be.entity.Member;
-import com.ootd.be.exception.ValidationException;
-import com.ootd.be.util.web.SpringWebUtil;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Key;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -56,7 +54,7 @@ public class JwtTokenProvider {
 
         String auths = (String) claims.getOrDefault(claimKey.AUTH.name(), "");
         if (!StringUtils.hasText(auths)) {
-            throw new IllegalStateException("No Authority Info.");
+            throw new OotdAuthenticationException("JWT TOKEN 오류");
         }
 
         List<GrantedAuthority> authorities = Arrays.stream(auths.split(","))

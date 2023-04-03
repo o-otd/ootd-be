@@ -1,8 +1,10 @@
 package com.ootd.be.api.auth;
 
 import java.util.Date;
-import java.util.Set;
 
+import com.ootd.be.config.security.exception.OotdAuthenticationException;
+import com.ootd.be.util.IdGenerator;
+import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -34,8 +36,15 @@ public class AuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final TokenRepository tokenRepository;
 
+    @Transactional
     public void join(JoinReqDto dto) {
+
+        memberRepository.findByEmail(dto.getEmail()).ifPresent((member) -> {
+            throw new ValidationException("등록된 이메일");
+        });
+
         Member member = new Member();
+        member.setId(IdGenerator.I.next());
         member.setEmail(dto.getEmail());
         member.setName(dto.getName());
         member.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -50,14 +59,16 @@ public class AuthService {
         JwtToken accessToken = tokenProvider.createAccessToken(authenticate);
 
         JwtToken refreshToken = tokenProvider.createRefreshToken(authenticate.getName());
-        tokenRepository.update(authenticate.getName(), refreshToken.getToken());
-        setRefreshToken(refreshToken);
+
+        updateRefreshToken(authenticate, refreshToken);
 
         return accessToken;
 
     }
 
-    private void setRefreshToken(JwtToken refreshToken) {
+    private void updateRefreshToken(Authentication authentication, JwtToken refreshToken) {
+        tokenRepository.update(authentication.getName(), refreshToken.getToken(), refreshToken.getExpiration());
+
         Cookie cookie = new Cookie("refreshToken", refreshToken.getToken());
         cookie.setPath("/");
         cookie.setHttpOnly(true);
@@ -69,18 +80,21 @@ public class AuthService {
     public JwtToken refresh() {
 
         Cookie cookie = SpringWebUtil.getCookieByName("refreshToken");
+        if (cookie == null) {
+            throw new OotdAuthenticationException("리프레시 토큰 오류");
+        }
         Claims refreshToken = tokenProvider.parseClaims(cookie.getValue());
         if (refreshToken.getExpiration().before(new Date())) {
-            throw new ValidationException("expired refresh token");
+            throw new OotdAuthenticationException("리프레시 토큰 오류");
         }
 
         if (!tokenRepository.validate(refreshToken.getSubject(), cookie.getValue())) {
-            throw new ValidationException("invalid refresh token");
+            throw new OotdAuthenticationException("리프레시 토큰 오류");
         }
 
         String accessTokenStr = tokenProvider.resolveToken();
         if (accessTokenStr == null) {
-            throw new ValidationException("session timeout");
+            throw new OotdAuthenticationException("인증 토큰 오류");
         }
 
         Authentication authentication = tokenProvider.getAuthentication(accessTokenStr);
@@ -88,7 +102,7 @@ public class AuthService {
 
         JwtToken renewedRefreshToken = tokenProvider.createRefreshToken(authentication.getName());
 
-        setRefreshToken(renewedRefreshToken);
+        updateRefreshToken(authentication, renewedRefreshToken);
 
         return renewedAccessToken;
     }

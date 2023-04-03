@@ -1,4 +1,4 @@
-package com.ootd.be.api.auth;
+package com.ootd.be.api;
 
 import lombok.Data;
 
@@ -9,6 +9,7 @@ public class ApiResponse<T> {
 
     private T data;
 
+    private int code;
     private String error;
 
     public static <T> ApiResponse<T> ok(T data) {
@@ -21,6 +22,14 @@ public class ApiResponse<T> {
     public static ApiResponse<Object> ok() {
         ApiResponse vo = new ApiResponse();
         vo.ok = true;
+        return vo;
+    }
+
+    public static ApiResponse<String> fail(int code, String error) {
+        ApiResponse vo = new ApiResponse();
+        vo.ok = false;
+        vo.code = code;
+        vo.error = error;
         return vo;
     }
 
