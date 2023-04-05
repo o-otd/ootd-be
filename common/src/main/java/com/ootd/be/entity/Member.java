@@ -2,19 +2,16 @@ package com.ootd.be.entity;
 
 import java.util.List;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString.Exclude;
+import org.springframework.stereotype.Component;
 
 @Data
 @Entity
 public class Member {
 
-    @Id
+    @Id @Column(name = "member_id")
     private Long id;
 
     private String email;
@@ -24,8 +21,6 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Authority authority;
-
-
 
     @Exclude
     @OneToMany(mappedBy = "member")
@@ -38,6 +33,8 @@ public class Member {
     @Exclude
     @OneToMany(mappedBy = "member")
     private List<FeedBookmark> feedBookmarks;
+
+
 
 
 }

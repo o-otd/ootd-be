@@ -25,6 +25,13 @@ dependencies {
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+    // querydsl
+    // https://mvnrepository.com/artifact/com.querydsl/querydsl-jpa
+    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+    annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
+
     // lombok
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
@@ -33,6 +40,25 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
 
 }
+
+// querydsl 설정
+// entity는 common 모듈에만 있으므로, 기타 모듈(api, batch에는 따로 설정하지 않음)
+var queryDslSrcDir = "$buildDir/generated/querydsl"
+
+java.sourceSets["main"].java {
+    srcDir(queryDslSrcDir)
+}
+
+tasks.compileJava {
+    options.generatedSourceOutputDirectory.set(file(queryDslSrcDir))
+}
+
+tasks.clean {
+    doLast {
+        file(queryDslSrcDir).delete()
+    }
+}
+// querydsl 설정 끝.
 
 tasks.jar {
     enabled = true

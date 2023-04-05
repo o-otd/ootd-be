@@ -2,27 +2,29 @@ package com.ootd.be.entity;
 
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
 @Entity
 public class Feed {
 
-    @Id
+    @Id @Column(name = "feed_id")
     private Long id;
 
     private String title;
     private String contents;
 
-    @OneToMany(cascade = CascadeType.PERSIST)
-    private List<Feeditem> items;
+    private String mainImage;
+
+    @OneToMany(mappedBy = "feed", cascade = CascadeType.PERSIST)
+    private List<FeedItem> items;
+
+    @OneToMany(mappedBy = "feed", cascade = { CascadeType.PERSIST, CascadeType.REMOVE })
+    private List<FeedFilter> feedFilters;
+
+    @OneToMany(mappedBy = "feed", cascade = { CascadeType.PERSIST, CascadeType.REMOVE })
+    private List<FeedHashTag> feedHashTags;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")

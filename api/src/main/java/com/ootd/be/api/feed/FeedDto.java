@@ -26,12 +26,27 @@ public class FeedDto {
 
     @Data
     public static class FilterReq {
-        private String gender;
-        private String style;
-        private String ageband;
+        private GenderFilter gender;
+        private StyleFilter style;
+        private int age;
         private List<String> colors;
-        private List<String> height;
-        private List<String> weight;
+        private RangeFilter height;
+        private RangeFilter weight;
+
+        public enum GenderFilter {
+            male, female;
+        }
+
+        public enum StyleFilter {
+            casual, modern, street, chic, romantic, dandy, sports, girlish, formal, american, retro;
+        }
+
+        @Data
+        public static class RangeFilter {
+            private int min;
+            private int max;
+        }
+
     }
 
     @Data

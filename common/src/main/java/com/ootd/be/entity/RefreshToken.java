@@ -1,8 +1,6 @@
 package com.ootd.be.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,10 +9,10 @@ import java.time.LocalDateTime;
 @Entity
 public class RefreshToken extends BaseEntity {
 
-    @Id
+    @Id @Column(name = "refresh_token_id")
     private Long id;
 
-    @jakarta.persistence.ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
+    @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
