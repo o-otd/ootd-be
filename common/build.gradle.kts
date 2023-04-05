@@ -43,7 +43,7 @@ dependencies {
 
 // querydsl 설정
 // entity는 common 모듈에만 있으므로, 기타 모듈(api, batch에는 따로 설정하지 않음)
-var queryDslSrcDir = "$buildDir/generated/querydsl"
+var queryDslSrcDir = "src/main/generated"
 
 java.sourceSets["main"].java {
     srcDir(queryDslSrcDir)
@@ -51,11 +51,12 @@ java.sourceSets["main"].java {
 
 tasks.compileJava {
     options.generatedSourceOutputDirectory.set(file(queryDslSrcDir))
+    println("이거 제대로 되는거 맞아?")
 }
 
 tasks.clean {
     doLast {
-        file(queryDslSrcDir).delete()
+        file(queryDslSrcDir).deleteRecursively()
     }
 }
 // querydsl 설정 끝.

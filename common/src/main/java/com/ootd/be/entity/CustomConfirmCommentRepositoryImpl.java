@@ -1,7 +1,6 @@
 package com.ootd.be.entity;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +13,6 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
     private static final com.ootd.be.entity.QConfirmComment qComment = com.ootd.be.entity.QConfirmComment.confirmComment;
 
     private final JPAQueryFactory queryFactory;
-    private final EntityManager entityManager;
 
     public List<ConfirmComment> findAllByConfirm(Confirm confirm) {
 
