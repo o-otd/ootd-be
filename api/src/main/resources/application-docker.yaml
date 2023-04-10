@@ -1,0 +1,17 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: create
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://ootd-db:3306/ootd
+    username: ootd
+    password: ootd!@#123!@#
+
