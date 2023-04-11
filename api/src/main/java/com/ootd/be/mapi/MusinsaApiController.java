@@ -21,7 +21,7 @@ public class MusinsaApiController {
     private final MusinsaApiService mApiService;
 
     @PostMapping("search")
-    public ApiResponse<List<Goods>> search(@RequestBody SearchReq data) {
+    public ApiResponse<List<Goods>> search(SearchReq data) {
         return ApiResponse.ok(mApiService.search(data.getKeyword(), data.getCategory()));
     }
 

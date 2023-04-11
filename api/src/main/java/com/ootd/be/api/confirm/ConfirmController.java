@@ -1,24 +1,31 @@
 package com.ootd.be.api.confirm;
 
 import com.ootd.be.api.ApiResponse;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("confirm")
 public class ConfirmController {
 
-    @PostMapping("register")
-    public ApiResponse register(@RequestBody ConfirmDto.RegisterReq req, List<MultipartFile> images) {
+    @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
+    @PostMapping(value = "register", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ApiResponse register(ConfirmDto.RegisterReq req) {
+
+        log.info("{}", req);
+//        log.info("{}", image);
+
+        log.info("{}", req.getImage().getName());
+        log.info("{}", req.getImage().getOriginalFilename());
 
         return ApiResponse.ok();
     }
-
-
 
 }

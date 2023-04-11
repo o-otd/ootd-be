@@ -34,13 +34,13 @@ public class AuthController {
     }
 
     @PostMapping("join")
-    public ApiResponse join(@RequestBody JoinReqDto req) {
+    public ApiResponse join(JoinReqDto req) {
         authService.join(req);
         return ApiResponse.ok();
     }
 
     @PostMapping("login")
-    public ApiResponse login(@RequestBody LoginReqDto req) {
+    public ApiResponse login(LoginReqDto req) {
         JwtToken accessToken = authService.login(req);
         return ApiResponse.ok(accessToken);
     }

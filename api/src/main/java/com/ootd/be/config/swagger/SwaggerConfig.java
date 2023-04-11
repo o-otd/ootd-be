@@ -33,6 +33,7 @@ public class SwaggerConfig {
                 .group("auth")
                 .displayName("계정")
                 .pathsToMatch("/auth/**")
+                .addOperationCustomizer((operation, handlerMethod) -> operation.security(List.of(new SecurityRequirement().addList(SCHEME))))
                 .build();
     }
 
@@ -42,6 +43,7 @@ public class SwaggerConfig {
                 .group("feed")
                 .displayName("피드")
                 .pathsToMatch("/feed/**")
+                .addOperationCustomizer((operation, handlerMethod) -> operation.security(List.of(new SecurityRequirement().addList(SCHEME))))
                 .build();
     }
 
@@ -51,6 +53,7 @@ public class SwaggerConfig {
                 .group("confirm")
                 .displayName("컨펌")
                 .pathsToMatch("/confirm/**")
+                .addOperationCustomizer((operation, handlerMethod) -> operation.security(List.of(new SecurityRequirement().addList(SCHEME))))
                 .build();
     }
 
@@ -60,7 +63,7 @@ public class SwaggerConfig {
                 .group("my")
                 .displayName("마이페이지")
                 .pathsToMatch("/my/**")
-                .addOpenApiCustomizer(openApi -> openApi.addSecurityItem(new SecurityRequirement().addList(SCHEME)))
+                .addOperationCustomizer((operation, handlerMethod) -> operation.security(List.of(new SecurityRequirement().addList(SCHEME))))
                 .build();
     }
 

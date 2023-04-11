@@ -3,6 +3,7 @@ package com.ootd.be.api.feed;
 import java.util.List;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 public class FeedDto {
 
@@ -21,6 +22,8 @@ public class FeedDto {
         private List<ItemReq> bags;
 
         private List<String> hashtags;
+
+        private MultipartFile mainImage;
 
     }
 

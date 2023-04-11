@@ -108,7 +108,7 @@ public class FeedService {
         feedBookmarkRepository.findByMemberAndFeed(member, feed).ifPresent(feedBookmarkRepository::delete);
     }
 
-    public void registerFeed(FeedDto.RegisterReq req, MultipartFile mainImage) {
+    public void registerFeed(FeedDto.RegisterReq req) {
 
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
@@ -121,13 +121,13 @@ public class FeedService {
 
         File attachDir = FileManager.I.today("attach", "feed", "main");
 
-        String extension = FileManager.I.findFileExtension(FileManager.PathType.file, mainImage.getOriginalFilename());
+        String extension = FileManager.I.findFileExtension(FileManager.PathType.file, req.getMainImage().getOriginalFilename());
         File imageFile = new File(attachDir, feed.getId().toString() + "." + extension);
 
         feed.setMainImage(FileManager.I.relativePath(imageFile));
 
         try {
-            BufferedImage image = ImageIO.read(mainImage.getInputStream());
+            BufferedImage image = ImageIO.read(req.getMainImage().getInputStream());
             ImageIO.write(image, extension, imageFile);
         } catch (IOException e) {
             throw new RuntimeException(e);

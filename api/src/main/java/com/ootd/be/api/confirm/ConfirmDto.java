@@ -2,6 +2,7 @@ package com.ootd.be.api.confirm;
 
 import com.ootd.be.entity.ConfirmVoteType;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ConfirmDto {
 
@@ -12,6 +13,11 @@ public class ConfirmDto {
 
         private String startDate;
         private String endDate;
+
+        private String email;
+        private String password;
+
+        private MultipartFile image;
 
     }
 
