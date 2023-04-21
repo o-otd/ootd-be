@@ -4,6 +4,8 @@ import com.ootd.be.entity.ConfirmVoteType;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public class ConfirmDto {
 
     @Data
@@ -17,7 +19,7 @@ public class ConfirmDto {
         private String email;
         private String password;
 
-        private MultipartFile image;
+        private List<MultipartFile> images;
 
     }
 

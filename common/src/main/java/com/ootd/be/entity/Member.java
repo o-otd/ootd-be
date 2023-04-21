@@ -5,7 +5,6 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString.Exclude;
-import org.springframework.stereotype.Component;
 
 @Data
 @Entity
@@ -29,6 +28,10 @@ public class Member {
     @Exclude
     @OneToMany(mappedBy = "member")
     private List<FeedLike> feedLikes;
+
+    @Exclude
+    @OneToMany(mappedBy = "member")
+    private List<ProductLike> productLikes;
 
     @Exclude
     @OneToMany(mappedBy = "member")

@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @Entity
-public class Feed {
+public class Feed extends BaseEntity {
 
     @Id @Column(name = "feed_id")
     private Long id;

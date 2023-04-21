@@ -11,4 +11,7 @@ public interface ConfirmCommentRepository extends JpaRepository<ConfirmComment, 
 
     Optional<ConfirmComment> findByParentComment(ConfirmComment parentComment);
 
+    List<ConfirmComment> findAllByMember(Member member);
+    long countByMember(Member member);
+
 }

@@ -9,7 +9,6 @@ import com.ootd.be.util.file.FileManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -31,7 +30,9 @@ public class FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final FeedBookmarkRepository feedBookmarkRepository;
     private final ProductRepository productRepository;
+    private final ProductLikeRepository productLikeRepository;
     private final FollowingRepository followingRepository;
+
 
     public void follow(Long feedId) {
         Member auth = SecurityHolder.get();
@@ -148,6 +149,40 @@ public class FeedService {
         saveProducts(feed, req);
 
         feedRepository.save(feed);
+
+    }
+
+    public void productLike(Long feedId, Long productId) {
+
+        Member auth = SecurityHolder.get();
+        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ValidationException("상품 정보를 찾을 수 없음"));
+
+        Optional<ProductLike> findProductLike = productLikeRepository.findByMemberAndProduct(member, product);
+        if (findProductLike.isPresent()) {
+            return;
+        }
+
+        ProductLike like = new ProductLike();
+        like.setId(IdGenerator.I.next());
+        like.setMember(member);
+        like.setProduct(product);
+
+        productLikeRepository.save(like);
+
+    }
+
+    public void productDislike(Long feedId, Long productId) {
+
+        Member auth = SecurityHolder.get();
+        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+
+        Product product = productRepository.findById(productId).orElseThrow(() -> new ValidationException("상품 정보를 찾을 수 없음"));
+
+        productLikeRepository.findByMemberAndProduct(member, product).ifPresent(like -> {
+            productLikeRepository.delete(like);
+        });
 
     }
 

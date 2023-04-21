@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.ootd"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 configurations {
@@ -20,16 +20,16 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.security:spring-security-test")
+//    implementation("org.springframework.boot:spring-boot-starter-security")
+//    implementation("org.springframework.boot:spring-boot-starter-web")
+//
+//    compileOnly("org.projectlombok:lombok")
+//    annotationProcessor("org.projectlombok:lombok")
+//
+//    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+//
+//    testImplementation("org.springframework.boot:spring-boot-starter-test")
+//    testImplementation("org.springframework.security:spring-security-test")
 }
 
 tasks.withType<Test> {

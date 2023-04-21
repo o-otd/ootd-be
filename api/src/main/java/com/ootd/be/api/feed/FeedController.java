@@ -56,4 +56,16 @@ public class FeedController {
         return ApiResponse.ok();
     }
 
+    @PostMapping("product/like")
+    public ApiResponse productLike(Long feedId, Long productId) {
+        feedService.productLike(feedId, productId);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping("product/dislike")
+    public ApiResponse productDislike(Long feedId, Long productId) {
+        feedService.productDislike(feedId, productId);
+        return ApiResponse.ok();
+    }
+
 }

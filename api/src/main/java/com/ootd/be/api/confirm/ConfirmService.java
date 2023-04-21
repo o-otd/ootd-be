@@ -26,7 +26,7 @@ public class ConfirmService {
     private final ConfirmVoteRepository voteRepository;
     private final ConfirmCommentRepository commentRepository;
 
-    public void registerConfirm(ConfirmDto.RegisterReq req, List<MultipartFile> images) {
+    public void registerConfirm(ConfirmDto.RegisterReq req) {
 
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
@@ -41,7 +41,7 @@ public class ConfirmService {
 
         File attachDir = FileManager.I.today("attach", "confirm");
 
-        List<ConfirmImage> confirmImages = images.stream().map(uploaded -> {
+        List<ConfirmImage> confirmImages = req.getImages().stream().map(uploaded -> {
 
             String extension = FileManager.I.findFileExtension(FileManager.PathType.file, uploaded.getOriginalFilename());
             File imageFile = new File(attachDir, confirm.getId().toString() + "." + extension);
@@ -134,5 +134,7 @@ public class ConfirmService {
         comment.setDeleted(true);
 
     }
+
+
 
 }
