@@ -14,6 +14,19 @@ public class MyDto {
         private long bookmarkCnt;
         private long confirmCnt;
         private long commentCnt;
+    }
+
+    public enum ArticleCategory {
+        feed, confirm, product, ;
+    }
+
+    @Data
+    public static class LikeListResDto {
+
+        private Long id;
+        private ArticleCategory category;
+        private String title;
+        private String imageUrl;
 
     }
 

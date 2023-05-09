@@ -6,8 +6,6 @@ import com.ootd.be.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,7 +23,7 @@ public class MyService {
     private final ConfirmRepository confirmRepository;
     private final ConfirmCommentRepository confirmCommentRepository;
 
-    public MyDto.MyPageResDto likes() {
+    public MyDto.MyPageResDto page() {
 
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));

@@ -19,6 +19,12 @@ public class ConfirmController {
 
     private final ConfirmService confirmService;
 
+    public ApiResponse list(ConfirmDto.ListReq req) {
+
+        return ApiResponse.ok(confirmService.list(req));
+
+    }
+
     @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "register", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ApiResponse register(ConfirmDto.RegisterReq req) {

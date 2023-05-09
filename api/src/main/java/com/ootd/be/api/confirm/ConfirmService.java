@@ -3,9 +3,14 @@ package com.ootd.be.api.confirm;
 import com.ootd.be.config.security.SecurityHolder;
 import com.ootd.be.entity.*;
 import com.ootd.be.exception.ValidationException;
+import com.ootd.be.util.DateTimeUtil;
 import com.ootd.be.util.IdGenerator;
 import com.ootd.be.util.file.FileManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +18,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -136,5 +143,36 @@ public class ConfirmService {
     }
 
 
+    public ConfirmDto.ListRes list(ConfirmDto.ListReq req) {
 
+        Pageable pageable = PageRequest.of(req.getPageReq().getPage(), req.getPageReq().getSize(), Sort.by(Sort.Order.desc("createdAt")));
+
+        Page<Confirm> all = confirmRepository.findAll(pageable);
+
+        ConfirmDto.ListRes res = new ConfirmDto.ListRes();
+
+        List<ConfirmDto.ContentData> datas = all.stream().map(c -> {
+            ConfirmDto.ContentData data = new ConfirmDto.ContentData();
+            data.setId(c.getId());
+            data.setUser(ConfirmDto.UserData.from(c.getMember()));
+            data.setStartDate(c.getStartDate());
+            data.setEndDate(c.getEndDate());
+            LocalDateTime endDateTime = DateTimeUtil.FORMATTER.YMD.from(c.getEndDate());
+
+            long remains = ChronoUnit.DAYS.between(LocalDateTime.now(), endDateTime);
+            data.setRemains(remains);
+
+            data.setContent(c.getContent());
+
+            data.setImages(c.getImages().stream().map(i -> i.getImagePath()).collect(Collectors.toList()));
+            return data;
+        }).collect(Collectors.toList());
+
+        res.setDatas(datas);
+
+        res.setPage(ConfirmDto.PageRes.of(all.getSize(), all.getNumber(), all.getTotalPages()));
+
+        return res;
+
+    }
 }

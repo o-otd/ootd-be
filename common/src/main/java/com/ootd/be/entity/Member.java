@@ -18,6 +18,8 @@ public class Member {
 
     private String password;
 
+    private String avatar;
+
     @Enumerated(EnumType.STRING)
     private Authority authority;
 
