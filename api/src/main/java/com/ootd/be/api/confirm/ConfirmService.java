@@ -3,35 +3,36 @@ package com.ootd.be.api.confirm;
 import com.ootd.be.config.security.SecurityHolder;
 import com.ootd.be.entity.*;
 import com.ootd.be.exception.ValidationException;
-import com.ootd.be.util.DateTimeUtil;
 import com.ootd.be.util.IdGenerator;
 import com.ootd.be.util.file.FileManager;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class ConfirmService {
 
     private final MemberRepository memberRepository;
     private final ConfirmRepository confirmRepository;
+    private final ConfirmImageRepository confirmImageRepository;
     private final ConfirmVoteRepository voteRepository;
     private final ConfirmCommentRepository commentRepository;
+    private final ConfirmCommentLikeRepository commentLikeRepository;
 
     public void registerConfirm(ConfirmDto.RegisterReq req) {
 
@@ -45,19 +46,23 @@ public class ConfirmService {
         confirm.setContent(req.getContent());
         confirm.setStartDate(req.getStartDate());
         confirm.setEndDate(req.getEndDate());
+        confirm.setNew(true);
 
-        File attachDir = FileManager.I.today("attach", "confirm");
+        File attachDir = FileManager.I.today("attach", "confirm", confirm.getId().toString());
 
         List<ConfirmImage> confirmImages = req.getImages().stream().map(uploaded -> {
-
-            String extension = FileManager.I.findFileExtension(FileManager.PathType.file, uploaded.getOriginalFilename());
-            File imageFile = new File(attachDir, confirm.getId().toString() + "." + extension);
 
             ConfirmImage confirmImage = new ConfirmImage();
             confirmImage.setId(IdGenerator.I.next());
             confirmImage.setMember(member);
             confirmImage.setConfirm(confirm);
+
+            String extension = FileManager.I.findFileExtension(FileManager.PathType.file, uploaded.getOriginalFilename());
+            File imageFile = new File(attachDir, confirmImage.getId() + "." + extension);
+            log.debug("image : {} -> {}", uploaded.getOriginalFilename(), imageFile.getAbsolutePath());
+
             confirmImage.setImagePath(FileManager.I.relativePath(imageFile));
+            confirmImage.setNew(true);
 
             try {
                 BufferedImage image = ImageIO.read(uploaded.getInputStream());
@@ -68,6 +73,8 @@ public class ConfirmService {
 
             return confirmImage;
         }).collect(Collectors.toList());
+
+//        List<ConfirmImage> savedImages = confirmImageRepository.saveAll(confirmImages);
 
         confirm.setImages(confirmImages);
 
@@ -138,41 +145,111 @@ public class ConfirmService {
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
 
         ConfirmComment comment = commentRepository.findById(req.getCommentId()).orElseThrow(() -> new ValidationException("유효하지 않은 댓글"));
+
+        if (!comment.getMember().equals(member)) {
+            throw new ValidationException("본인이 작성한 댓글만 삭제 가능");
+        }
+
         comment.setDeleted(true);
 
     }
 
+    public ConfirmDto.ListRes comfirms(ConfirmDto.ListReq req) {
 
-    public ConfirmDto.ListRes list(ConfirmDto.ListReq req) {
+        Member auth = SecurityHolder.get();
+        Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
 
-        Pageable pageable = PageRequest.of(req.getPageReq().getPage(), req.getPageReq().getSize(), Sort.by(Sort.Order.desc("createdAt")));
+        Pageable pageable = req.getPage().toPageRequest(Sort.by(Sort.Order.desc("createdAt")));
 
         Page<Confirm> all = confirmRepository.findAll(pageable);
 
-        ConfirmDto.ListRes res = new ConfirmDto.ListRes();
+        List<ConfirmDto.ConfirmData> datas = all.stream().map(confirm -> {
+            ConfirmDto.ConfirmData data = ConfirmDto.ConfirmData.from(confirm);
 
-        List<ConfirmDto.ContentData> datas = all.stream().map(c -> {
-            ConfirmDto.ContentData data = new ConfirmDto.ContentData();
-            data.setId(c.getId());
-            data.setUser(ConfirmDto.UserData.from(c.getMember()));
-            data.setStartDate(c.getStartDate());
-            data.setEndDate(c.getEndDate());
-            LocalDateTime endDateTime = DateTimeUtil.FORMATTER.YMD.from(c.getEndDate());
+            ConfirmComment bestComment = commentRepository.best(confirm);
+            data.setBestComment(ConfirmDto.CommentData.from(bestComment));
 
-            long remains = ChronoUnit.DAYS.between(LocalDateTime.now(), endDateTime);
-            data.setRemains(remains);
+            findMember.ifPresent(member -> {
+                Optional<ConfirmVote> findVote = voteRepository.findByVoterAndConfirm(member, confirm);
+                findVote.ifPresent(vote -> {
+                    data.setMyVoting(vote.getVoteType());
+                });
+            });
 
-            data.setContent(c.getContent());
-
-            data.setImages(c.getImages().stream().map(i -> i.getImagePath()).collect(Collectors.toList()));
             return data;
         }).collect(Collectors.toList());
 
-        res.setDatas(datas);
-
-        res.setPage(ConfirmDto.PageRes.of(all.getSize(), all.getNumber(), all.getTotalPages()));
-
-        return res;
+        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(all);
+        return ConfirmDto.ListRes.of(pageRes, datas);
 
     }
+
+
+    public ConfirmDto.ListRes comments(ConfirmDto.CommentListReq req) {
+
+        Member auth = SecurityHolder.get();
+        Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
+
+        Confirm confirm = confirmRepository.findById(req.getConfirmId()).orElseThrow(() -> new ValidationException("유효하지 않은 글"));
+
+        Pageable pageable = req.getPage().toPageRequest(Sort.by(Sort.Order.desc("createdAt")));
+        Page<ConfirmComment> comments = commentRepository.findAllByConfirm(confirm, pageable);
+        List<ConfirmDto.CommentData> res = comments.stream().map(comment -> {
+            ConfirmDto.CommentData data = ConfirmDto.CommentData.from(comment);
+            findMember.ifPresent(member -> {
+                if (comment.getMember().equals(member)) {
+                    data.setMyComment(true);
+                }
+
+                // left join . count로 빼도 될 것 같은데.. 귀찮으니까 그냥 씀.
+                if (comment.getLikes().stream().filter(like -> like.getMember().equals(member)).count() > 0L) {
+                    data.setMyLike(true);
+                }
+            });
+
+            return data;
+        }).collect(Collectors.toList());
+
+        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(comments);
+        return ConfirmDto.ListRes.of(pageRes, res);
+
+    }
+
+    public void likeComment(ConfirmDto.LikeCommentReq req) {
+
+        Member auth = SecurityHolder.get();
+        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+
+        ConfirmComment comment = commentRepository.findById(req.getCommentId()).orElseThrow(() -> new ValidationException("유효하지 않은 댓글"));
+
+        Optional<ConfirmCommentLike> findLike = commentLikeRepository.findByCommentAndMember(comment, member);
+        if (findLike.isPresent()) {
+            return;
+        }
+
+        ConfirmCommentLike like = new ConfirmCommentLike();
+        like.setId(IdGenerator.I.next());
+        like.setComment(comment);
+        like.setMember(member);
+
+        commentLikeRepository.save(like);
+    }
+
+    public void dislikeComment(ConfirmDto.LikeCommentReq req) {
+
+        Member auth = SecurityHolder.get();
+        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+
+        ConfirmComment comment = commentRepository.findById(req.getCommentId()).orElseThrow(() -> new ValidationException("유효하지 않은 댓글"));
+
+        Optional<ConfirmCommentLike> findLike = commentLikeRepository.findByCommentAndMember(comment, member);
+        if (findLike.isEmpty()) {
+            return;
+        }
+
+        commentLikeRepository.save(findLike.get());
+    }
+
 }
+
+

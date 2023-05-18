@@ -13,7 +13,8 @@ import java.util.StringJoiner;
 public class FileManager {
 
     private static final String HOME_PATH = System.getProperty("user.home", "");
-    private static final File ROOT_DIR = new File(HOME_PATH + "/DATA");
+    private static final String ROOT_PATH = "/DATA";
+    private static final File ROOT_DIR = new File(HOME_PATH + ROOT_PATH);
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
@@ -41,7 +42,7 @@ public class FileManager {
     }
 
     public String relativePath(File file) {
-        return file.getAbsolutePath().replace(HOME_PATH, ROOT_DIR.getAbsolutePath());
+        return file.getAbsolutePath().substring(ROOT_DIR.getAbsolutePath().length());
     }
 
     public enum PathType {

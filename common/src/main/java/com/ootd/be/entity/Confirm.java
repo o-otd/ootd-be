@@ -9,7 +9,8 @@ import java.util.List;
 @Entity
 public class Confirm extends BaseEntity {
 
-    @Id @Column(name = "confirm_id")
+    @Id
+    @Column(name = "confirm_id")
     private Long id;
 
     private String content;

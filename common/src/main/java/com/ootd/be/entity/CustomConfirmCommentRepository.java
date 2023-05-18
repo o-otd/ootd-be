@@ -1,9 +1,14 @@
 package com.ootd.be.entity;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CustomConfirmCommentRepository {
 
-    List<ConfirmComment> findAllByConfirm(Confirm confirm);
+    Page<ConfirmComment> findAllByConfirm(Confirm confirm);
+
+    Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable);
+
+    ConfirmComment best(Confirm confirm);
 
 }

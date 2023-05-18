@@ -1,10 +1,12 @@
 package com.ootd.be.entity;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -14,16 +16,33 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
     private final JPAQueryFactory queryFactory;
 
-    public List<ConfirmComment> findAllByConfirm(Confirm confirm) {
+    public Page<ConfirmComment> findAllByConfirm(Confirm confirm) {
+        return findAllByConfirm(confirm, null);
+    }
 
-        List<ConfirmComment> comments = queryFactory.selectFrom(qComment)
+    public Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable) {
+
+        JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
                 .where(qComment.confirm.eq(confirm))
                 .orderBy(qComment.rootComment.id.asc(), qComment.depth.asc(), qComment.createdAt.asc())
-                .join(qComment.parentComment).fetchJoin()
-                .fetch();
+                .join(qComment.parentComment).fetchJoin();
 
-        return comments;
+        if (pageable != null) {
+            query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+        }
 
+        Long count = queryFactory.select(qComment.count()).from(qComment).where(qComment.confirm.eq(confirm)).fetchOne();
+
+        return new PageImpl<>(query.fetch(), pageable, count.intValue());
+
+    }
+
+    public ConfirmComment best(Confirm confirm) {
+        return queryFactory.selectFrom(qComment)
+                .where(qComment.confirm.eq(confirm))
+                .orderBy(qComment.likes.size().desc(), qComment.createdAt.desc())
+                .limit(1L)
+                .fetchOne();
     }
 
 }

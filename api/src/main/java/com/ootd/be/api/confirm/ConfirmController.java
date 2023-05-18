@@ -6,10 +6,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -19,18 +18,15 @@ public class ConfirmController {
 
     private final ConfirmService confirmService;
 
+    @PostMapping(value = "list")
     public ApiResponse list(ConfirmDto.ListReq req) {
-
-        return ApiResponse.ok(confirmService.list(req));
-
+        return ApiResponse.ok(confirmService.comfirms(req));
     }
 
     @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "register", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ApiResponse register(ConfirmDto.RegisterReq req) {
-
         confirmService.registerConfirm(req);
-
         return ApiResponse.ok();
     }
 
@@ -38,6 +34,11 @@ public class ConfirmController {
     public ApiResponse vote(ConfirmDto.VoteReq req) {
         confirmService.vote(req);
         return ApiResponse.ok();
+    }
+
+    @PostMapping(value = "comment/list")
+    public ApiResponse commentList(ConfirmDto.CommentListReq req) {
+        return ApiResponse.ok(confirmService.comments(req));
     }
 
     @PostMapping(value = "comment/register")
@@ -53,9 +54,22 @@ public class ConfirmController {
     }
 
     @PostMapping(value = "comment/delete")
-    public ApiResponse modifyComment(ConfirmDto.DeleteCommentReq req) {
+    public ApiResponse deleteComment(ConfirmDto.DeleteCommentReq req) {
         confirmService.deleteComment(req);
         return ApiResponse.ok();
     }
+
+    @PostMapping(value = "comment/like")
+    public ApiResponse likeComment(ConfirmDto.LikeCommentReq req) {
+        confirmService.likeComment(req);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping(value = "comment/dislike")
+    public ApiResponse dislikeComment(ConfirmDto.LikeCommentReq req) {
+        confirmService.dislikeComment(req);
+        return ApiResponse.ok();
+    }
+
 
 }

@@ -3,6 +3,8 @@ package com.ootd.be.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Entity
 public class ConfirmComment extends BaseEntity {
@@ -29,6 +31,9 @@ public class ConfirmComment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
+
+    @OneToMany(mappedBy = "comment")
+    private List<ConfirmCommentLike> likes;
 
     private boolean deleted;
 

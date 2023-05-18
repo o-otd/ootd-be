@@ -1,23 +1,100 @@
 package com.ootd.be.api.confirm;
 
-import com.ootd.be.entity.ConfirmVoteType;
-import com.ootd.be.entity.Member;
+import com.ootd.be.common.Variables;
+import com.ootd.be.entity.*;
+import com.ootd.be.util.DateTimeUtil;
 import lombok.Data;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConfirmDto {
 
     @Data
-    public static class PageReq {
-        private int size = 10;
-        private int page = 1;
+    public static class ListReq {
+        private PageReq page;
     }
 
     @Data
-    public static class ListReq {
-        private PageReq pageReq;
+    public static class ListRes<T> {
+        private PageRes page;
+        private List<T> datas;
+
+        public static <T> ListRes<T> of(PageRes page, List<T> datas) {
+            ListRes<T> vo = new ListRes();
+            vo.page = page;
+            vo.datas = datas;
+            return vo;
+        }
+    }
+
+//    @Data
+//    public static class ListRes {
+//        private PageRes page;
+//        private List<ConfirmData> datas;
+//
+//        public static ListRes of(PageRes page, List<ConfirmData> datas) {
+//            ListRes vo = new ListRes();
+//            vo.page = page;
+//            vo.datas = datas;
+//            return vo;
+//        }
+//    }
+
+    @Data
+    public static class ConfirmData {
+        private Long id;
+
+        private UserData user;
+
+        private String startDate;
+        private String endDate;
+        private Long remains;
+
+        private String content;
+
+        private List<String> images;
+
+        private ConfirmVoteType myVoting;
+
+        private Long goodCnt;
+        private Long badCnt;
+
+        private CommentData bestComment;
+
+        public static ConfirmData from(Confirm confirm) {
+            ConfirmData vo = new ConfirmData();
+            vo.setId(confirm.getId());
+            vo.setUser(ConfirmDto.UserData.from(confirm.getMember()));
+            vo.setStartDate(confirm.getStartDate());
+            vo.setEndDate(confirm.getEndDate());
+
+            LocalDateTime endDateTime = DateTimeUtil.FORMATTER.YMD.from(confirm.getEndDate());
+            long remains = ChronoUnit.DAYS.between(LocalDateTime.now(), endDateTime);
+            vo.setRemains(remains);
+
+            vo.setContent(confirm.getContent());
+
+            vo.setImages(confirm.getImages().stream().map(ConfirmImage::getImagePath).collect(Collectors.toList()));
+
+            return vo;
+        }
+    }
+
+    @Data
+    public static class PageReq {
+        private int size = Variables.Page.SIZE;
+        private int page = Variables.Page.PAGE;
+
+        public PageRequest toPageRequest(Sort sort) {
+            return PageRequest.of(page, size, sort);
+        }
     }
 
     @Data
@@ -26,11 +103,11 @@ public class ConfirmDto {
         private int page;
         private int total;
 
-        public static PageRes of(int size, int page, int total) {
+        public static PageRes of(Page page) {
             PageRes vo = new PageRes();
-            vo.size = size;
-            vo.page = page;
-            vo.total = total;
+            vo.size = page.getSize();
+            vo.page = page.getNumber();
+            vo.total = page.getTotalPages();
             return vo;
         }
     }
@@ -50,25 +127,28 @@ public class ConfirmDto {
         }
     }
 
+
     @Data
-    public static class ContentData {
+    public static class CommentData {
         private Long id;
-
         private UserData user;
+        private String comment;
 
-        private String startDate;
-        private String endDate;
-        private Long remains;
+        private boolean myComment;
+        private boolean myLike;
 
-        private String content;
+        private int like;
 
-        private List<String> images;
-    }
+        public static CommentData from(ConfirmComment comment) {
+            if (comment == null) return null;
+            CommentData vo = new CommentData();
+            vo.setId(comment.getId());
+            vo.setUser(UserData.from(comment.getMember()));
+            vo.setComment(comment.getContent());
+            vo.setLike(comment.getLikes().size());
 
-    @Data
-    public static class ListRes {
-        private PageRes page;
-        private List<ContentData> datas;
+            return vo;
+        }
     }
 
     @Data
@@ -78,9 +158,6 @@ public class ConfirmDto {
 
         private String startDate;
         private String endDate;
-
-        private String email;
-        private String password;
 
         private List<MultipartFile> images;
 
@@ -92,6 +169,17 @@ public class ConfirmDto {
         private Long confirmId;
         private ConfirmVoteType voteType;
 
+    }
+
+    @Data
+    public static class CommentListReq {
+        private Long confirmId;
+        private PageReq page;
+    }
+
+    @Data
+    public static class LikeCommentReq {
+        private Long commentId;
     }
 
     @Data

@@ -51,13 +51,12 @@ java.sourceSets["main"].java {
 
 tasks.compileJava {
     options.generatedSourceOutputDirectory.set(file(queryDslSrcDir))
+    tasks.clean
     println("이거 제대로 되는거 맞아?")
 }
 
 tasks.clean {
-    doLast {
-        file(queryDslSrcDir).deleteRecursively()
-    }
+    file(queryDslSrcDir).deleteRecursively()
 }
 // querydsl 설정 끝.
 

@@ -4,10 +4,12 @@ import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString.Exclude;
 
 @Data
 @Entity
+@EqualsAndHashCode(of = {"id"})
 public class Member {
 
     @Id @Column(name = "member_id")

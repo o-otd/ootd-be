@@ -6,16 +6,19 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import lombok.Data;
+import org.springframework.data.domain.Persistable;
 
 @Data
 @MappedSuperclass
-public class BaseEntity {
+public abstract class BaseEntity implements Persistable {
 
     private Long creator;
     private LocalDateTime createdAt;
 
     private Long updater;
     private LocalDateTime updatedAt;
+
+    private transient boolean isNew;
 
     private boolean deleted;
 
