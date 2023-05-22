@@ -1,28 +1,27 @@
 package com.ootd.be.util;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class DateTimeUtil {
 
-    public enum FORMATTER {
-        YMD("yyyyMMdd"),
-        ;
+    public static class YMD {
 
-        final String format;
-        final DateTimeFormatter formatter;
+        public static final String format = "yyyyMMdd";
+        private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
 
-        FORMATTER(String format) {
-            this.format = format;
-            this.formatter = DateTimeFormatter.ofPattern(format);
+        public static String format(LocalDateTime dateTime) {
+            return dateTime.format(formatter);
         }
 
-        public String to(LocalDateTime dateTime) {
-            return dateTime.format(this.formatter);
+        public static LocalDate from(String dateTime) {
+            return LocalDate.from(formatter.parse(dateTime));
         }
 
-        public LocalDateTime from(String dateTime) {
-            return LocalDateTime.from(formatter.parse(dateTime));
+        public static LocalDateTime from(String dateTime, boolean endOfDay) {
+            LocalDateTime localDate = from(dateTime).atStartOfDay();
+            return endOfDay ? localDate.plusDays(1).minusNanos(1) : localDate;
         }
     }
 

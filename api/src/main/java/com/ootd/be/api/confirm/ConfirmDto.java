@@ -4,14 +4,18 @@ import com.ootd.be.common.Variables;
 import com.ootd.be.entity.*;
 import com.ootd.be.util.DateTimeUtil;
 import lombok.Data;
+import org.slf4j.helpers.MessageFormatter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ConfirmDto {
@@ -63,8 +67,8 @@ public class ConfirmDto {
 
         private ConfirmVoteType myVoting;
 
-        private Long goodCnt;
-        private Long badCnt;
+        private int goodCnt;
+        private int badCnt;
 
         private CommentData bestComment;
 
@@ -75,7 +79,7 @@ public class ConfirmDto {
             vo.setStartDate(confirm.getStartDate());
             vo.setEndDate(confirm.getEndDate());
 
-            LocalDateTime endDateTime = DateTimeUtil.FORMATTER.YMD.from(confirm.getEndDate());
+            LocalDateTime endDateTime = DateTimeUtil.YMD.from(confirm.getEndDate(), true);
             long remains = ChronoUnit.DAYS.between(LocalDateTime.now(), endDateTime);
             vo.setRemains(remains);
 
@@ -83,8 +87,13 @@ public class ConfirmDto {
 
             vo.setImages(confirm.getImages().stream().map(ConfirmImage::getImagePath).collect(Collectors.toList()));
 
+            Map<ConfirmVoteType, List<ConfirmVote>> voteTypes = confirm.getVotes().stream().collect(Collectors.groupingBy(v -> v.getVoteType()));
+            vo.setGoodCnt(voteTypes.getOrDefault(ConfirmVoteType.good, new ArrayList<> ()).size());
+            vo.setBadCnt(voteTypes.getOrDefault(ConfirmVoteType.bad, new ArrayList<> ()).size());
+
             return vo;
         }
+
     }
 
     @Data
@@ -94,6 +103,10 @@ public class ConfirmDto {
 
         public PageRequest toPageRequest(Sort sort) {
             return PageRequest.of(page, size, sort);
+        }
+
+        public PageRequest toPageRequest() {
+            return PageRequest.of(page, size);
         }
     }
 
@@ -125,6 +138,11 @@ public class ConfirmDto {
             vo.avatar = member.getAvatar();
             return vo;
         }
+
+        @Override
+        public String toString() {
+            return this.name + "(" + this.id + " : " + this.avatar + ")";
+        }
     }
 
 
@@ -149,6 +167,11 @@ public class ConfirmDto {
 
             return vo;
         }
+
+        @Override
+        public String toString() {
+            return MessageFormat.format("{} : {} ({} | {} | {})", this.user, this.comment, this.myComment, this.myLike, this.like);
+        }
     }
 
     @Data
@@ -164,11 +187,20 @@ public class ConfirmDto {
     }
 
     @Data
-    public static class VoteReq {
+    public static class RegisterRes {
+        private Long id;
 
+        public static RegisterRes of(Long id) {
+            RegisterRes vo = new RegisterRes();
+            vo.id = id;
+            return vo;
+        }
+    }
+
+    @Data
+    public static class VoteReq {
         private Long confirmId;
         private ConfirmVoteType voteType;
-
     }
 
     @Data
@@ -187,6 +219,17 @@ public class ConfirmDto {
         private Long confirmId;
         private Long parentCommentId;
         private String content;
+    }
+
+    @Data
+    public static class RegisterCommentRes {
+        private Long commentId;
+
+        public static RegisterCommentRes of(Long id) {
+            RegisterCommentRes vo = new RegisterCommentRes();
+            vo.commentId = id;
+            return vo;
+        }
     }
 
     @Data

@@ -29,12 +29,11 @@ public class ConfirmService {
 
     private final MemberRepository memberRepository;
     private final ConfirmRepository confirmRepository;
-    private final ConfirmImageRepository confirmImageRepository;
     private final ConfirmVoteRepository voteRepository;
     private final ConfirmCommentRepository commentRepository;
     private final ConfirmCommentLikeRepository commentLikeRepository;
 
-    public void registerConfirm(ConfirmDto.RegisterReq req) {
+    public ConfirmDto.RegisterRes registerConfirm(ConfirmDto.RegisterReq req) {
 
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
@@ -80,10 +79,11 @@ public class ConfirmService {
 
         confirmRepository.save(confirm);
 
+        return ConfirmDto.RegisterRes.of(confirm.getId());
+
     }
 
     public void vote(ConfirmDto.VoteReq req) {
-
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
 
@@ -103,10 +103,9 @@ public class ConfirmService {
             vote.setVoteType(req.getVoteType());
             voteRepository.save(vote);
         }
-
     }
 
-    public void registerComment(ConfirmDto.RegisterCommentReq req) {
+    public ConfirmDto.RegisterCommentRes registerComment(ConfirmDto.RegisterCommentReq req) {
 
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
@@ -126,6 +125,8 @@ public class ConfirmService {
         }
 
         commentRepository.save(comment);
+
+        return ConfirmDto.RegisterCommentRes.of(comment.getId());
 
     }
 
@@ -154,7 +155,7 @@ public class ConfirmService {
 
     }
 
-    public ConfirmDto.ListRes comfirms(ConfirmDto.ListReq req) {
+    public ConfirmDto.ListRes<ConfirmDto.ConfirmData> confirms(ConfirmDto.ListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
@@ -185,14 +186,14 @@ public class ConfirmService {
     }
 
 
-    public ConfirmDto.ListRes comments(ConfirmDto.CommentListReq req) {
+    public ConfirmDto.ListRes<ConfirmDto.CommentData> comments(ConfirmDto.CommentListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
 
         Confirm confirm = confirmRepository.findById(req.getConfirmId()).orElseThrow(() -> new ValidationException("유효하지 않은 글"));
 
-        Pageable pageable = req.getPage().toPageRequest(Sort.by(Sort.Order.desc("createdAt")));
+        Pageable pageable = req.getPage().toPageRequest();
         Page<ConfirmComment> comments = commentRepository.findAllByConfirm(confirm, pageable);
         List<ConfirmDto.CommentData> res = comments.stream().map(comment -> {
             ConfirmDto.CommentData data = ConfirmDto.CommentData.from(comment);
@@ -247,7 +248,11 @@ public class ConfirmService {
             return;
         }
 
-        commentLikeRepository.save(findLike.get());
+        ConfirmCommentLike like = findLike.get();
+        if (!like.getMember().equals(member)) throw new ValidationException("타인의 좋아요");
+
+        commentLikeRepository.delete(like);
+
     }
 
 }

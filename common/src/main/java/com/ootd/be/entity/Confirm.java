@@ -28,6 +28,9 @@ public class Confirm extends BaseEntity {
     @OneToMany(mappedBy = "confirm")
     private List<ConfirmComment> comments;
 
+    @OneToMany(mappedBy = "confirm")
+    private List<ConfirmVote> votes;
+
     private boolean completed;
 
 

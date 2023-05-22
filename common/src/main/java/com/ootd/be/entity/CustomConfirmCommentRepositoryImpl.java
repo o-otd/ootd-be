@@ -23,15 +23,18 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
     public Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable) {
 
         JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
-                .where(qComment.confirm.eq(confirm))
+                .where(qComment.confirm.eq(confirm).and(qComment.confirm.deleted.eq(false)).and(qComment.deleted.eq(false)))
                 .orderBy(qComment.rootComment.id.asc(), qComment.depth.asc(), qComment.createdAt.asc())
-                .join(qComment.parentComment).fetchJoin();
+                .leftJoin(qComment.parentComment).fetchJoin();
 
         if (pageable != null) {
             query.offset(pageable.getOffset()).limit(pageable.getPageSize());
         }
 
-        Long count = queryFactory.select(qComment.count()).from(qComment).where(qComment.confirm.eq(confirm)).fetchOne();
+        Long count = queryFactory.select(qComment.count())
+                .from(qComment)
+                .where(qComment.confirm.eq(confirm))
+                .fetchOne();
 
         return new PageImpl<>(query.fetch(), pageable, count.intValue());
 
