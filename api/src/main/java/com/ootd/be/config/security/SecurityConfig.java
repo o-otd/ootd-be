@@ -32,7 +32,7 @@ public class SecurityConfig {
             "/auth/refresh",
             "/api-docs/**",
             "/swagger-ui/**",
-//            "/**"
+            "/**"
             };
 
     @Bean
@@ -40,6 +40,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // fixme. 권한 체크 재설계 필 로그인 안해도 사용할 수 있는 기능이 많음.
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http

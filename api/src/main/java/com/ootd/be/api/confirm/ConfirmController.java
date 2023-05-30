@@ -20,6 +20,7 @@ public class ConfirmController {
 
     private final ConfirmService confirmService;
 
+    @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "list")
     public ApiResponse list(ListReq req) {
         return ApiResponse.ok(confirmService.confirms(req));
@@ -37,6 +38,7 @@ public class ConfirmController {
         return ApiResponse.ok();
     }
 
+    @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "comment/list")
     public ApiResponse<ConfirmDto.ListRes<ConfirmDto.CommentData>> commentList(CommentListReq req) {
         return ApiResponse.ok(confirmService.comments(req));
