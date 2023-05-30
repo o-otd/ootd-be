@@ -23,7 +23,7 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
     public Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable) {
 
         JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
-                .where(qComment.confirm.eq(confirm).and(qComment.confirm.deleted.eq(false)).and(qComment.deleted.eq(false)))
+                .where(qComment.confirm.eq(confirm).and(qComment.depth.eq(0)))
                 .orderBy(qComment.rootComment.id.asc(), qComment.depth.asc(), qComment.createdAt.asc())
                 .leftJoin(qComment.parentComment).fetchJoin();
 
@@ -33,12 +33,34 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
         Long count = queryFactory.select(qComment.count())
                 .from(qComment)
-                .where(qComment.confirm.eq(confirm))
+                .where(qComment.confirm.eq(confirm).and(qComment.depth.eq(0)))
                 .fetchOne();
 
         return new PageImpl<>(query.fetch(), pageable, count.intValue());
 
     }
+
+    public Page<ConfirmComment> findAllByComment(ConfirmComment comment, Pageable pageable) {
+
+        JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
+                .where(qComment.parentComment.eq(comment))
+                .orderBy(qComment.createdAt.asc())
+                .leftJoin(qComment.parentComment).fetchJoin();
+
+        if (pageable != null) {
+            query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+        }
+
+        Long count = queryFactory.select(qComment.count())
+                .from(qComment)
+                .where(qComment.parentComment.eq(comment))
+                .fetchOne();
+
+        return new PageImpl<>(query.fetch(), pageable, count.intValue());
+
+    }
+
+
 
     public ConfirmComment best(Confirm confirm) {
         return queryFactory.selectFrom(qComment)

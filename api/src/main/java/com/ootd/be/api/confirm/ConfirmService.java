@@ -185,13 +185,12 @@ public class ConfirmService {
 
     }
 
-
     public ConfirmDto.ListRes<ConfirmDto.CommentData> comments(ConfirmDto.CommentListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
 
-        Confirm confirm = confirmRepository.findById(req.getConfirmId()).orElseThrow(() -> new ValidationException("유효하지 않은 글"));
+        Confirm confirm = confirmRepository.findById(req.getTargetId()).orElseThrow(() -> new ValidationException("유효하지 않은 글"));
 
         Pageable pageable = req.getPage().toPageRequest();
         Page<ConfirmComment> comments = commentRepository.findAllByConfirm(confirm, pageable);
@@ -215,6 +214,38 @@ public class ConfirmService {
         return ConfirmDto.ListRes.of(pageRes, res);
 
     }
+
+    public ConfirmDto.ListRes<ConfirmDto.NestedCommentData> nestedComments(ConfirmDto.CommentListReq req) {
+
+        Member auth = SecurityHolder.get();
+        Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
+
+        ConfirmComment parentComment = commentRepository.findById(req.getTargetId()).orElseThrow(() -> new ValidationException("유효하지 않은 댓글"));
+
+        Pageable pageable = req.getPage().toPageRequest();
+        Page<ConfirmComment> comments = commentRepository.findAllByComment(parentComment, pageable);
+        List<ConfirmDto.NestedCommentData> res = comments.stream().map(comment -> {
+            ConfirmDto.NestedCommentData data = ConfirmDto.NestedCommentData.from(comment);
+            findMember.ifPresent(member -> {
+                if (comment.getMember().equals(member)) {
+                    data.setMyComment(true);
+                }
+
+                // left join . count로 빼도 될 것 같은데.. 귀찮으니까 그냥 씀.
+                if (comment.getLikes().stream().filter(like -> like.getMember().equals(member)).count() > 0L) {
+                    data.setMyLike(true);
+                }
+            });
+
+            return data;
+        }).collect(Collectors.toList());
+
+        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(comments);
+        return ConfirmDto.ListRes.of(pageRes, res);
+
+    }
+
+
 
     public void likeComment(ConfirmDto.LikeCommentReq req) {
 

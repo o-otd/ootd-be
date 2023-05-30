@@ -4,7 +4,6 @@ import com.ootd.be.common.Variables;
 import com.ootd.be.entity.*;
 import com.ootd.be.util.DateTimeUtil;
 import lombok.Data;
-import org.slf4j.helpers.MessageFormatter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -148,14 +147,14 @@ public class ConfirmDto {
 
     @Data
     public static class CommentData {
-        private Long id;
-        private UserData user;
-        private String comment;
+        protected Long id;
+        protected UserData user;
+        protected String comment;
 
-        private boolean myComment;
-        private boolean myLike;
+        protected boolean myComment;
+        protected boolean myLike;
 
-        private int like;
+        protected int like;
 
         public static CommentData from(ConfirmComment comment) {
             if (comment == null) return null;
@@ -164,6 +163,29 @@ public class ConfirmDto {
             vo.setUser(UserData.from(comment.getMember()));
             vo.setComment(comment.getContent());
             vo.setLike(comment.getLikes().size());
+
+            return vo;
+        }
+
+        @Override
+        public String toString() {
+            return MessageFormat.format("{} : {} ({} | {} | {})", this.user, this.comment, this.myComment, this.myLike, this.like);
+        }
+    }
+
+    @Data
+    public static class NestedCommentData extends CommentData {
+
+        protected CommentData parentComment;
+
+        public static NestedCommentData from(ConfirmComment comment) {
+            if (comment == null) return null;
+            NestedCommentData vo = new NestedCommentData();
+            vo.setId(comment.getId());
+            vo.setUser(UserData.from(comment.getMember()));
+            vo.setComment(comment.getContent());
+            vo.setLike(comment.getLikes().size());
+            vo.setParentComment(CommentData.from(comment.getParentComment()));
 
             return vo;
         }
@@ -205,7 +227,7 @@ public class ConfirmDto {
 
     @Data
     public static class CommentListReq {
-        private Long confirmId;
+        private Long targetId;
         private PageReq page;
     }
 

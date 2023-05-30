@@ -9,6 +9,8 @@ public interface CustomConfirmCommentRepository {
 
     Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable);
 
+    Page<ConfirmComment> findAllByComment(ConfirmComment comment, Pageable pageable);
+
     ConfirmComment best(Confirm confirm);
 
 }

@@ -110,7 +110,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
     void t06_comments() {
 
         ConfirmDto.CommentListReq req = new ConfirmDto.CommentListReq();
-        req.setConfirmId(confirmId);
+        req.setTargetId(confirmId);
 
         ConfirmDto.PageReq page = new ConfirmDto.PageReq();
         page.setPage(0);

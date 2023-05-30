@@ -38,8 +38,13 @@ public class ConfirmController {
     }
 
     @PostMapping(value = "comment/list")
-    public ApiResponse commentList(CommentListReq req) {
+    public ApiResponse<ConfirmDto.ListRes<ConfirmDto.CommentData>> commentList(CommentListReq req) {
         return ApiResponse.ok(confirmService.comments(req));
+    }
+
+    @PostMapping(value = "nestedComment/list")
+    public ApiResponse<ConfirmDto.ListRes<ConfirmDto.NestedCommentData>> nestedCommentList(CommentListReq req) {
+        return ApiResponse.ok(confirmService.nestedComments(req));
     }
 
     @PostMapping(value = "comment/register")
