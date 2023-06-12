@@ -25,6 +25,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler implemen
     @ExceptionHandler(value = {HttpStatusCodeException.class})
     public ApiResponse httpStatusCodeException(HttpStatusCodeException e) {
         log.error("[httpStatusCode] {}", e.getMessage());
+        if (log.isDebugEnabled()) {
+            e.printStackTrace();
+        }
         if (e.getStatusCode().is4xxClientError()) {
             return ApiResponse.fail(400, "인증 오류");
         } else {
@@ -35,18 +38,27 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler implemen
     @ExceptionHandler(value = {AuthenticationException.class})
     public ApiResponse authenticationException(AuthenticationException e) {
         log.error("[authentication] {}", e.getMessage());
+        if (log.isDebugEnabled()) {
+            e.printStackTrace();
+        }
         return ApiResponse.fail(400, "인증 오류");
     }
 
     @ExceptionHandler(value = {Exception.class})
     public ApiResponse exception(Exception e) {
         log.error("[exception] {}", e.getMessage());
+        if (log.isDebugEnabled()) {
+            e.printStackTrace();
+        }
         return ApiResponse.fail(500, e.getMessage());
     }
 
     @ExceptionHandler(value = {Throwable.class})
     public ApiResponse throwable(Throwable e) {
         log.error("[throwable] {}", e.getMessage());
+        if (log.isDebugEnabled()) {
+            e.printStackTrace();
+        }
         return ApiResponse.fail(500, e.getMessage());
     }
 

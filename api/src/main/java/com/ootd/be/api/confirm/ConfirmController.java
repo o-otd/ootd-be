@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,12 +21,12 @@ public class ConfirmController {
 
     private final ConfirmService confirmService;
 
-    @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "list")
     public ApiResponse list(ListReq req) {
         return ApiResponse.ok(confirmService.confirms(req));
     }
 
+    @Secured({"USER"})
     @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "register", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ApiResponse<RegisterRes> register(RegisterReq req) {
@@ -38,7 +39,6 @@ public class ConfirmController {
         return ApiResponse.ok();
     }
 
-    @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "comment/list")
     public ApiResponse<ConfirmDto.ListRes<ConfirmDto.CommentData>> commentList(CommentListReq req) {
         return ApiResponse.ok(confirmService.comments(req));

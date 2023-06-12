@@ -22,6 +22,10 @@ public class ConfirmDto {
     @Data
     public static class ListReq {
         private PageReq page;
+
+        public PageReq getPage() {
+            return page == null ? new PageReq() : page;
+        }
     }
 
     @Data
