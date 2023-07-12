@@ -1,5 +1,9 @@
 package com.ootd.be.api.confirm;
 
+import com.ootd.be.api.ListReq;
+import com.ootd.be.api.ListRes;
+import com.ootd.be.api.PageReq;
+import com.ootd.be.api.PageRes;
 import com.ootd.be.config.security.SecurityHolder;
 import com.ootd.be.entity.*;
 import com.ootd.be.exception.ValidationException;
@@ -9,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -29,14 +34,16 @@ public class ConfirmService {
 
     private final MemberRepository memberRepository;
     private final ConfirmRepository confirmRepository;
+    private final ConfirmVoteTypeRepository voteTypeRepository;
     private final ConfirmVoteRepository voteRepository;
     private final ConfirmCommentRepository commentRepository;
     private final ConfirmCommentLikeRepository commentLikeRepository;
 
-    public ConfirmDto.RegisterRes registerConfirm(ConfirmDto.RegisterReq req) {
+    public ConfirmDto.ConfirmData registerConfirm(ConfirmDto.RegisterReq req) {
 
         Member auth = SecurityHolder.get();
-        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+        Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
+        Member member = findMember.orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
 
         Confirm confirm = new Confirm();
         confirm.setId(IdGenerator.I.next());
@@ -77,9 +84,21 @@ public class ConfirmService {
 
         confirm.setImages(confirmImages);
 
-        confirmRepository.save(confirm);
+        List<ConfirmVoteType> voteTypes = req.getVoteTypeReqs().stream().map(type -> {
+            ConfirmVoteType voteType = new ConfirmVoteType();
+            voteType.setId(IdGenerator.I.next());
+            voteType.setOrder(type.getOrder());
+            voteType.setWording(type.getWording());
+            voteType.setConfirm(confirm);
+            voteType.setNew(true);
+            return voteType;
+        }).collect(Collectors.toList());
 
-        return ConfirmDto.RegisterRes.of(confirm.getId());
+        confirm.setVoteTypes(voteTypes);
+
+        Confirm saved = confirmRepository.save(confirm);
+
+        return toConfirmDataDto(findMember, saved);
 
     }
 
@@ -89,20 +108,33 @@ public class ConfirmService {
 
         Confirm confirm = confirmRepository.findById(req.getConfirmId()).orElseThrow(() -> new ValidationException("유효하지 않은 컨펌"));
 
+        ConfirmVoteType voteType = voteTypeRepository.findById(req.getVoteTypeId()).orElseThrow(() -> new ValidationException("유효하지 않은 투표"));
+
         Optional<ConfirmVote> findVote = voteRepository.findByVoterAndConfirm(member, confirm);
-        if (req.getVoteType() == ConfirmVoteType.cancel) {
-            findVote.ifPresent(vote -> voteRepository.delete(vote));
-        } else {
-            ConfirmVote vote = findVote.orElseGet(() -> {
-                ConfirmVote newVote = new ConfirmVote();
-                newVote.setId(IdGenerator.I.next());
-                newVote.setVoter(member);
-                newVote.setConfirm(confirm);
-                return newVote;
-            });
-            vote.setVoteType(req.getVoteType());
-            voteRepository.save(vote);
-        }
+
+        ConfirmVote vote = findVote.orElseGet(() -> {
+            ConfirmVote newVote = new ConfirmVote();
+            newVote.setId(IdGenerator.I.next());
+            newVote.setVoter(member);
+            newVote.setConfirm(confirm);
+            return newVote;
+        });
+        vote.setVoteType(voteType);
+        voteRepository.save(vote);
+
+    }
+
+    public void voteCancel(ConfirmDto.VoteCancelReq req) {
+
+        Member auth = SecurityHolder.get();
+        Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
+
+        Confirm confirm = confirmRepository.findById(req.getConfirmId()).orElseThrow(() -> new ValidationException("유효하지 않은 컨펌"));
+
+        Optional<ConfirmVote> findVote = voteRepository.findByVoterAndConfirm(member, confirm);
+
+        findVote.ifPresent(vote -> voteRepository.delete(vote));
+
     }
 
     public ConfirmDto.RegisterCommentRes registerComment(ConfirmDto.RegisterCommentReq req) {
@@ -124,9 +156,9 @@ public class ConfirmService {
             comment.setRootComment(comment);
         }
 
-        commentRepository.save(comment);
+        ConfirmComment saved = commentRepository.save(comment);
 
-        return ConfirmDto.RegisterCommentRes.of(comment.getId());
+        return ConfirmDto.RegisterCommentRes.of(saved);
 
     }
 
@@ -155,7 +187,7 @@ public class ConfirmService {
 
     }
 
-    public ConfirmDto.ListRes<ConfirmDto.ConfirmData> confirms(ConfirmDto.ListReq req) {
+    public ListRes<ConfirmDto.ConfirmData> confirms(ListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
@@ -164,28 +196,38 @@ public class ConfirmService {
 
         Page<Confirm> all = confirmRepository.findAll(pageable);
 
-        List<ConfirmDto.ConfirmData> datas = all.stream().map(confirm -> {
-            ConfirmDto.ConfirmData data = ConfirmDto.ConfirmData.from(confirm);
+        List<ConfirmDto.ConfirmData> datas = all.stream().map(confirm -> toConfirmDataDto(findMember, confirm)).collect(Collectors.toList());
 
-            ConfirmComment bestComment = commentRepository.best(confirm);
-            data.setBestComment(ConfirmDto.CommentData.from(bestComment));
-
-            findMember.ifPresent(member -> {
-                Optional<ConfirmVote> findVote = voteRepository.findByVoterAndConfirm(member, confirm);
-                findVote.ifPresent(vote -> {
-                    data.setMyVoting(vote.getVoteType());
-                });
-            });
-
-            return data;
-        }).collect(Collectors.toList());
-
-        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(all);
-        return ConfirmDto.ListRes.of(pageRes, datas);
+        PageRes pageRes = PageRes.of(all);
+        return ListRes.of(pageRes, datas);
 
     }
 
-    public ConfirmDto.ListRes<ConfirmDto.CommentData> comments(ConfirmDto.CommentListReq req) {
+    private ConfirmDto.ConfirmData toConfirmDataDto(Optional<Member> findMember, Confirm confirm) {
+        ConfirmDto.ConfirmData data = ConfirmDto.ConfirmData.from(confirm);
+
+        ConfirmComment bestComment = commentRepository.best(confirm);
+        if (bestComment != null) {
+            ConfirmDto.CommentData bestDto = ConfirmDto.CommentData.from(bestComment);
+            if (bestComment.getDepth() == 0) {
+                Page<ConfirmComment> nested = commentRepository.findAllByComment(bestComment, PageRequest.ofSize(1));
+                bestDto.setNested(nested.getSize());
+            }
+
+            data.setBestComment(bestDto);
+        }
+
+        findMember.ifPresent(member -> {
+            Optional<ConfirmVote> findVote = voteRepository.findByVoterAndConfirm(member, confirm);
+            findVote.ifPresent(vote -> {
+                data.setMyVoting(vote.getVoteType().getId());
+            });
+        });
+
+        return data;
+    }
+
+    public ListRes<ConfirmDto.CommentData> comments(ConfirmDto.CommentListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
@@ -207,15 +249,17 @@ public class ConfirmService {
                 }
             });
 
+            Page<ConfirmComment> nested = commentRepository.findAllByComment(comment, PageRequest.ofSize(1));
+            data.setNested(nested.getSize());
             return data;
         }).collect(Collectors.toList());
 
-        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(comments);
-        return ConfirmDto.ListRes.of(pageRes, res);
+        PageRes pageRes = PageRes.of(comments);
+        return ListRes.of(pageRes, res);
 
     }
 
-    public ConfirmDto.ListRes<ConfirmDto.NestedCommentData> nestedComments(ConfirmDto.CommentListReq req) {
+    public ListRes<ConfirmDto.NestedCommentData> nestedComments(ConfirmDto.CommentListReq req) {
 
         Member auth = SecurityHolder.get();
         Optional<Member> findMember = memberRepository.findByEmail(auth.getEmail());
@@ -240,8 +284,8 @@ public class ConfirmService {
             return data;
         }).collect(Collectors.toList());
 
-        ConfirmDto.PageRes pageRes = ConfirmDto.PageRes.of(comments);
-        return ConfirmDto.ListRes.of(pageRes, res);
+        PageRes pageRes = PageRes.of(comments);
+        return ListRes.of(pageRes, res);
 
     }
 

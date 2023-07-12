@@ -1,58 +1,36 @@
 package com.ootd.be.api.confirm;
 
-import com.ootd.be.common.Variables;
+import com.ootd.be.api.PageReq;
 import com.ootd.be.entity.*;
+import com.ootd.be.util.CollectionUtils;
 import com.ootd.be.util.DateTimeUtil;
+import com.ootd.be.util.StringUtil;
 import lombok.Data;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ConfirmDto {
 
     @Data
-    public static class ListReq {
-        private PageReq page;
+    public static class VoteResult {
+        private Long voteTypeId;
+        private String wording;
+        private int order;
+        private int count;
 
-        public PageReq getPage() {
-            return page == null ? new PageReq() : page;
-        }
-    }
-
-    @Data
-    public static class ListRes<T> {
-        private PageRes page;
-        private List<T> datas;
-
-        public static <T> ListRes<T> of(PageRes page, List<T> datas) {
-            ListRes<T> vo = new ListRes();
-            vo.page = page;
-            vo.datas = datas;
+        public static VoteResult from(ConfirmVoteType voteType) {
+            VoteResult vo = new VoteResult();
+            vo.voteTypeId = voteType.getId();
+            vo.wording = voteType.getWording();
+            vo.order = voteType.getOrder();
+            vo.count = CollectionUtils.size(voteType.getConfirmVotes());
             return vo;
         }
     }
-
-//    @Data
-//    public static class ListRes {
-//        private PageRes page;
-//        private List<ConfirmData> datas;
-//
-//        public static ListRes of(PageRes page, List<ConfirmData> datas) {
-//            ListRes vo = new ListRes();
-//            vo.page = page;
-//            vo.datas = datas;
-//            return vo;
-//        }
-//    }
 
     @Data
     public static class ConfirmData {
@@ -68,10 +46,11 @@ public class ConfirmDto {
 
         private List<String> images;
 
-        private ConfirmVoteType myVoting;
+        private Long myVoting;
 
-        private int goodCnt;
-        private int badCnt;
+        private List<VoteResult> votes;
+
+        private int totalComments;
 
         private CommentData bestComment;
 
@@ -83,49 +62,20 @@ public class ConfirmDto {
             vo.setEndDate(confirm.getEndDate());
 
             LocalDateTime endDateTime = DateTimeUtil.YMD.from(confirm.getEndDate(), true);
-            long remains = ChronoUnit.DAYS.between(LocalDateTime.now(), endDateTime);
+            long remains = DateTimeUtil.dayDiff(LocalDateTime.now(), endDateTime);
             vo.setRemains(remains);
 
             vo.setContent(confirm.getContent());
 
             vo.setImages(confirm.getImages().stream().map(ConfirmImage::getImagePath).collect(Collectors.toList()));
 
-            Map<ConfirmVoteType, List<ConfirmVote>> voteTypes = confirm.getVotes().stream().collect(Collectors.groupingBy(v -> v.getVoteType()));
-            vo.setGoodCnt(voteTypes.getOrDefault(ConfirmVoteType.good, new ArrayList<> ()).size());
-            vo.setBadCnt(voteTypes.getOrDefault(ConfirmVoteType.bad, new ArrayList<> ()).size());
+            vo.setTotalComments(CollectionUtils.size(confirm.getComments()));
+
+            vo.votes = confirm.getVoteTypes().stream().map(VoteResult::from).collect(Collectors.toList());
 
             return vo;
         }
 
-    }
-
-    @Data
-    public static class PageReq {
-        private int size = Variables.Page.SIZE;
-        private int page = Variables.Page.PAGE;
-
-        public PageRequest toPageRequest(Sort sort) {
-            return PageRequest.of(page, size, sort);
-        }
-
-        public PageRequest toPageRequest() {
-            return PageRequest.of(page, size);
-        }
-    }
-
-    @Data
-    public static class PageRes {
-        private int size;
-        private int page;
-        private int total;
-
-        public static PageRes of(Page page) {
-            PageRes vo = new PageRes();
-            vo.size = page.getSize();
-            vo.page = page.getNumber();
-            vo.total = page.getTotalPages();
-            return vo;
-        }
     }
 
     @Data
@@ -158,7 +108,11 @@ public class ConfirmDto {
         protected boolean myComment;
         protected boolean myLike;
 
+        protected String registered;
+
         protected int like;
+        protected int nested;
+
 
         public static CommentData from(ConfirmComment comment) {
             if (comment == null) return null;
@@ -166,14 +120,14 @@ public class ConfirmDto {
             vo.setId(comment.getId());
             vo.setUser(UserData.from(comment.getMember()));
             vo.setComment(comment.getContent());
-            vo.setLike(comment.getLikes().size());
-
+            vo.setLike(CollectionUtils.size(comment.getLikes()));
+            vo.setRegistered(DateTimeUtil.YMDHM.format(comment.getCreatedAt()));
             return vo;
         }
 
         @Override
         public String toString() {
-            return MessageFormat.format("{} : {} ({} | {} | {})", this.user, this.comment, this.myComment, this.myLike, this.like);
+            return StringUtil.format("{} : {} ({} | {} | {})", this.user, this.comment, this.myComment, this.myLike, this.like);
         }
     }
 
@@ -208,8 +162,16 @@ public class ConfirmDto {
         private String startDate;
         private String endDate;
 
+        private List<VoteTypeReq> voteTypeReqs;
+
         private List<MultipartFile> images;
 
+    }
+
+    @Data
+    public static class VoteTypeReq {
+        private String wording;
+        private int order;
     }
 
     @Data
@@ -226,7 +188,12 @@ public class ConfirmDto {
     @Data
     public static class VoteReq {
         private Long confirmId;
-        private ConfirmVoteType voteType;
+        private Long voteTypeId;
+    }
+
+    @Data
+    public static class VoteCancelReq {
+        private Long confirmId;
     }
 
     @Data
@@ -249,11 +216,14 @@ public class ConfirmDto {
 
     @Data
     public static class RegisterCommentRes {
-        private Long commentId;
+        private CommentData comment;
 
-        public static RegisterCommentRes of(Long id) {
+        public static RegisterCommentRes of(ConfirmComment comment) {
             RegisterCommentRes vo = new RegisterCommentRes();
-            vo.commentId = id;
+            vo.comment = CommentData.from(comment);
+            vo.comment.myComment = true;
+            vo.comment.myLike = false;
+            vo.comment.like = 0;
             return vo;
         }
     }

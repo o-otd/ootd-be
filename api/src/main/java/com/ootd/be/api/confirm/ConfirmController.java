@@ -1,6 +1,8 @@
 package com.ootd.be.api.confirm;
 
 import com.ootd.be.api.ApiResponse;
+import com.ootd.be.api.ListReq;
+import com.ootd.be.api.ListRes;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ public class ConfirmController {
     @Secured({"USER"})
     @RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
     @PostMapping(value = "register", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ApiResponse<RegisterRes> register(RegisterReq req) {
+    public ApiResponse<ConfirmData> register(RegisterReq req) {
         return ApiResponse.ok(confirmService.registerConfirm(req));
     }
 
@@ -39,13 +41,19 @@ public class ConfirmController {
         return ApiResponse.ok();
     }
 
+    @PostMapping(value = "vote/cancel")
+    public ApiResponse voteCancel(VoteCancelReq req) {
+        confirmService.voteCancel(req);
+        return ApiResponse.ok();
+    }
+
     @PostMapping(value = "comment/list")
-    public ApiResponse<ConfirmDto.ListRes<ConfirmDto.CommentData>> commentList(CommentListReq req) {
+    public ApiResponse<ListRes<CommentData>> commentList(CommentListReq req) {
         return ApiResponse.ok(confirmService.comments(req));
     }
 
     @PostMapping(value = "nestedComment/list")
-    public ApiResponse<ConfirmDto.ListRes<ConfirmDto.NestedCommentData>> nestedCommentList(CommentListReq req) {
+    public ApiResponse<ListRes<NestedCommentData>> nestedCommentList(CommentListReq req) {
         return ApiResponse.ok(confirmService.nestedComments(req));
     }
 

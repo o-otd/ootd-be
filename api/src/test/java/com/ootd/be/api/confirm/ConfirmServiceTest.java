@@ -1,8 +1,13 @@
 package com.ootd.be.api.confirm;
 
+import com.ootd.be.api.ListReq;
+import com.ootd.be.api.ListRes;
+import com.ootd.be.api.PageReq;
 import com.ootd.be.api.ServiceTestBase;
+import com.ootd.be.entity.ConfirmVote;
 import com.ootd.be.entity.ConfirmVoteType;
 import com.ootd.be.util.GridPrinter;
+import com.ootd.be.util.StringUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.MethodOrderer;
@@ -17,6 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -29,6 +36,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
     private ConfirmService confirmService;
 
     private Long confirmId = 2L;
+    private Long confirmVoteTypeId = 2L;
 
     @Test
     public void t01_registerConfirm() {
@@ -50,26 +58,41 @@ public class ConfirmServiceTest extends ServiceTestBase {
 
         req.setImages(images);
 
-        ConfirmDto.RegisterRes res = confirmService.registerConfirm(req);
+        ConfirmDto.VoteTypeReq req1 = new ConfirmDto.VoteTypeReq();
+        req1.setOrder(1);
+        req1.setWording("1111");
+
+        ConfirmDto.VoteTypeReq req2 = new ConfirmDto.VoteTypeReq();
+        req2.setOrder(2);
+        req2.setWording("2222");
+
+        req.setVoteTypeReqs(List.of(req1, req2));
+
+        ConfirmDto.ConfirmData res = confirmService.registerConfirm(req);
         confirmId = res.getId();
+        confirmVoteTypeId = res.getVotes().get(0).getVoteTypeId();
+
     }
 
     @Test
     public void t02_confirms() {
 
-        ConfirmDto.PageReq page = new ConfirmDto.PageReq();
+        PageReq page = new PageReq();
         page.setPage(0);
         page.setSize(10);
 
-        ConfirmDto.ListReq req = new ConfirmDto.ListReq();
+        ListReq req = new ListReq();
         req.setPage(page);
 
-        ConfirmDto.ListRes<ConfirmDto.ConfirmData> confirms = confirmService.confirms(req);
-        GridPrinter printer = GridPrinter.of("아이디", "사용자", "기간", "내용", "이미지", "투표여부", "좋아요", "안좋아요", "댓글");
+        final String voteFormat = "{}({}) : {}";
+        final Function<ConfirmDto.VoteResult, String> voteFormatting = (voteResult) -> StringUtil.format(voteFormat, voteResult.getWording(), voteResult.getVoteTypeId(), voteResult.getCount());
+
+        ListRes<ConfirmDto.ConfirmData> confirms = confirmService.confirms(req);
+        GridPrinter printer = GridPrinter.of("아이디", "사용자", "기간", "내용", "이미지", "투표여부", "투표1", "투표2", "댓글");
         confirms.getDatas().forEach(confirm -> {
             printer.add(confirm.getId(), confirm.getUser(), confirm.getStartDate() + "-" + confirm.getEndDate() + "(" + confirm.getRemains() + ")"
                     , confirm.getContent(), confirm.getImages().stream().collect(Collectors.joining(","))
-                    , confirm.getMyVoting(), confirm.getGoodCnt(), confirm.getBadCnt(), confirm.getBestComment()
+                    , confirm.getMyVoting(), voteFormatting.apply(confirm.getVotes().get(0)), voteFormatting.apply(confirm.getVotes().get(1)), confirm.getBestComment()
             );
 
         });
@@ -83,7 +106,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
 
         ConfirmDto.VoteReq req = new ConfirmDto.VoteReq();
         req.setConfirmId(confirmId);
-        req.setVoteType(ConfirmVoteType.good);
+        req.setVoteTypeId(confirmVoteTypeId);
         confirmService.vote(req);
 
     }
@@ -102,7 +125,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
         req.setConfirmId(confirmId);
         req.setContent("별룬뎅?");
         ConfirmDto.RegisterCommentRes res = confirmService.registerComment(req);
-        commentId = res.getCommentId();
+        commentId = res.getComment().getId();
 
     }
 
@@ -112,7 +135,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
         ConfirmDto.CommentListReq req = new ConfirmDto.CommentListReq();
         req.setTargetId(confirmId);
 
-        ConfirmDto.PageReq page = new ConfirmDto.PageReq();
+        PageReq page = new PageReq();
         page.setPage(0);
         page.setSize(10);
 
@@ -120,7 +143,7 @@ public class ConfirmServiceTest extends ServiceTestBase {
 
         GridPrinter printer = GridPrinter.of("아이디", "사용자", "내용", "좋아요", "내 댓글", "내 좋아요");
 
-        ConfirmDto.ListRes<ConfirmDto.CommentData> comments = confirmService.comments(req);
+        ListRes<ConfirmDto.CommentData> comments = confirmService.comments(req);
         comments.getDatas().forEach(comment -> {
             printer.add(comment.getId(), comment.getUser(), comment.getComment(), comment.getLike(), comment.isMyComment(), comment.isMyLike());
         });
@@ -181,7 +204,35 @@ public class ConfirmServiceTest extends ServiceTestBase {
     }
 
     @Test
-    void t14_comments() {
+    void t14_registerNestedComment() {
+
+        ConfirmDto.RegisterCommentReq req = new ConfirmDto.RegisterCommentReq();
+        req.setConfirmId(confirmId);
+        req.setParentCommentId(commentId);
+        req.setContent("ㅇㅈ");
+        ConfirmDto.RegisterCommentRes res = confirmService.registerComment(req);
+        nestedCommentId = res.getComment().getId();
+
+    }
+
+    private long nestedCommentId = 1L;
+
+    @Test
+    void t15_likeComment() {
+
+        ConfirmDto.LikeCommentReq req = new ConfirmDto.LikeCommentReq();
+        req.setCommentId(nestedCommentId);
+        confirmService.likeComment(req);
+
+    }
+
+    @Test
+    void t16_confirms() {
+        t02_confirms();
+    }
+
+    @Test
+    void t17_comments() {
         t06_comments();
     }
 
