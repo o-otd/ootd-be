@@ -1,5 +1,6 @@
 package com.ootd.be.entity;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +23,9 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
     public Page<ConfirmComment> findAllByConfirm(Confirm confirm, Pageable pageable) {
 
+        BooleanExpression whereConditions = qComment.confirm.eq(confirm).and(qComment.depth.eq(0)).and(qComment.deleted.isFalse());
         JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
-                .where(qComment.confirm.eq(confirm).and(qComment.depth.eq(0)))
+                .where(whereConditions)
                 .orderBy(qComment.rootComment.id.asc(), qComment.depth.asc(), qComment.createdAt.asc())
                 .leftJoin(qComment.parentComment).fetchJoin();
 
@@ -33,7 +35,7 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
         Long count = queryFactory.select(qComment.count())
                 .from(qComment)
-                .where(qComment.confirm.eq(confirm).and(qComment.depth.eq(0)))
+                .where(whereConditions)
                 .fetchOne();
 
         return new PageImpl<>(query.fetch(), pageable, count.intValue());
@@ -42,8 +44,13 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
     public Page<ConfirmComment> findAllByComment(ConfirmComment comment, Pageable pageable) {
 
+        BooleanExpression whereConditions = qComment.rootComment.eq(comment)
+                .and(qComment.depth.ne(0))
+                .and(qComment.deleted.isFalse())
+                .and(qComment.ne(comment));
+
         JPAQuery<ConfirmComment> query = queryFactory.selectFrom(qComment)
-                .where(qComment.rootComment.eq(comment).and(qComment.depth.ne(0)).and(qComment.ne(comment)))
+                .where(whereConditions)
                 .orderBy(qComment.createdAt.asc())
                 .leftJoin(qComment.parentComment).fetchJoin();
 
@@ -53,7 +60,7 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
         Long count = queryFactory.select(qComment.count())
                 .from(qComment)
-                .where(qComment.rootComment.eq(comment))
+                .where(whereConditions)
                 .fetchOne();
 
         return new PageImpl<>(query.fetch(), pageable, count.intValue());
@@ -64,7 +71,7 @@ public class CustomConfirmCommentRepositoryImpl implements CustomConfirmCommentR
 
     public ConfirmComment best(Confirm confirm) {
         return queryFactory.selectFrom(qComment)
-                .where(qComment.confirm.eq(confirm))
+                .where(qComment.confirm.eq(confirm).and(qComment.deleted.isFalse()))
                 .orderBy(qComment.likes.size().desc(), qComment.createdAt.desc())
                 .limit(1L)
                 .fetchOne();

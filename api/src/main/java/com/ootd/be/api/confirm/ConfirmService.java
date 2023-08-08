@@ -2,14 +2,12 @@ package com.ootd.be.api.confirm;
 
 import com.ootd.be.api.ListReq;
 import com.ootd.be.api.ListRes;
-import com.ootd.be.api.PageReq;
 import com.ootd.be.api.PageRes;
 import com.ootd.be.config.security.SecurityHolder;
 import com.ootd.be.entity.*;
 import com.ootd.be.exception.ValidationException;
 import com.ootd.be.util.IdGenerator;
 import com.ootd.be.util.file.FileManager;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -27,7 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Transactional
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class ConfirmService {
@@ -39,6 +38,7 @@ public class ConfirmService {
     private final ConfirmCommentRepository commentRepository;
     private final ConfirmCommentLikeRepository commentLikeRepository;
 
+    @Transactional
     public ConfirmDto.ConfirmData registerConfirm(ConfirmDto.RegisterReq req) {
 
         Member auth = SecurityHolder.get();
@@ -102,6 +102,7 @@ public class ConfirmService {
 
     }
 
+    @Transactional
     public void vote(ConfirmDto.VoteReq req) {
         Member auth = SecurityHolder.get();
         Member member = memberRepository.findByEmail(auth.getEmail()).orElseThrow(() -> new ValidationException("회원 정보를 찾을 수 없음"));
@@ -124,6 +125,7 @@ public class ConfirmService {
 
     }
 
+    @Transactional
     public void voteCancel(ConfirmDto.VoteCancelReq req) {
 
         Member auth = SecurityHolder.get();
@@ -137,6 +139,7 @@ public class ConfirmService {
 
     }
 
+    @Transactional
     public ConfirmDto.RegisterCommentRes registerComment(ConfirmDto.RegisterCommentReq req) {
 
         Member auth = SecurityHolder.get();
@@ -151,6 +154,9 @@ public class ConfirmService {
         comment.setConfirm(confirm);
         if (req.getParentCommentId() != null) {
             ConfirmComment parentComment = commentRepository.findById(req.getParentCommentId()).orElseThrow(() -> new ValidationException("유효하지 않은 상위 댓글"));
+            if (parentComment.isDeleted()) {
+                throw new ValidationException("유효하지 않은 상위 댓글");
+            }
             comment.addTo(parentComment);
         } else {
             comment.setRootComment(comment);
@@ -162,6 +168,7 @@ public class ConfirmService {
 
     }
 
+    @Transactional
     public void modifyComment(ConfirmDto.ModifyCommentReq req) {
 
         Member auth = SecurityHolder.get();
@@ -172,6 +179,7 @@ public class ConfirmService {
 
     }
 
+    @Transactional
     public void deleteComment(ConfirmDto.DeleteCommentReq req) {
 
         Member auth = SecurityHolder.get();
@@ -196,7 +204,9 @@ public class ConfirmService {
 
         Page<Confirm> all = confirmRepository.findAll(pageable);
 
-        List<ConfirmDto.ConfirmData> datas = all.stream().map(confirm -> toConfirmDataDto(findMember, confirm)).collect(Collectors.toList());
+        List<ConfirmDto.ConfirmData> datas = all.stream()
+                .map(confirm -> toConfirmDataDto(findMember, confirm))
+                .collect(Collectors.toList());
 
         PageRes pageRes = PageRes.of(all);
         return ListRes.of(pageRes, datas);
@@ -208,12 +218,7 @@ public class ConfirmService {
 
         ConfirmComment bestComment = commentRepository.best(confirm);
         if (bestComment != null) {
-            ConfirmDto.CommentData bestDto = ConfirmDto.CommentData.from(bestComment);
-            if (bestComment.getDepth() == 0) {
-                Page<ConfirmComment> nested = commentRepository.findAllByComment(bestComment, PageRequest.ofSize(1));
-                bestDto.setNested(nested.getSize());
-            }
-
+            ConfirmDto.CommentData bestDto = toCommentDto(findMember, bestComment);
             data.setBestComment(bestDto);
         }
 
@@ -236,27 +241,24 @@ public class ConfirmService {
 
         Pageable pageable = req.getPage().toPageRequest();
         Page<ConfirmComment> comments = commentRepository.findAllByConfirm(confirm, pageable);
-        List<ConfirmDto.CommentData> res = comments.stream().map(comment -> {
-            ConfirmDto.CommentData data = ConfirmDto.CommentData.from(comment);
-            findMember.ifPresent(member -> {
-                if (comment.getMember().equals(member)) {
-                    data.setMyComment(true);
-                }
-
-                // left join . count로 빼도 될 것 같은데.. 귀찮으니까 그냥 씀.
-                if (comment.getLikes().stream().filter(like -> like.getMember().equals(member)).count() > 0L) {
-                    data.setMyLike(true);
-                }
-            });
-
-            Page<ConfirmComment> nested = commentRepository.findAllByComment(comment, PageRequest.ofSize(1));
-            data.setNested(nested.getSize());
-            return data;
-        }).collect(Collectors.toList());
+        List<ConfirmDto.CommentData> res = comments.stream().map(comment -> toCommentDto(findMember, comment)).collect(Collectors.toList());
 
         PageRes pageRes = PageRes.of(comments);
         return ListRes.of(pageRes, res);
 
+    }
+
+    private ConfirmDto.CommentData toCommentDto(Optional<Member> findMember, ConfirmComment comment) {
+        ConfirmDto.CommentData data = ConfirmDto.CommentData.from(comment);
+        findMember.ifPresent(member -> {
+            checkMine(comment, data, member);
+        });
+
+        if (comment.getDepth() == 0) {
+            Page<ConfirmComment> nested = commentRepository.findAllByComment(comment, PageRequest.ofSize(1));
+            data.setNested(nested.getTotalElements());
+        }
+        return data;
     }
 
     public ListRes<ConfirmDto.NestedCommentData> nestedComments(ConfirmDto.CommentListReq req) {
@@ -271,14 +273,7 @@ public class ConfirmService {
         List<ConfirmDto.NestedCommentData> res = comments.stream().map(comment -> {
             ConfirmDto.NestedCommentData data = ConfirmDto.NestedCommentData.from(comment);
             findMember.ifPresent(member -> {
-                if (comment.getMember().equals(member)) {
-                    data.setMyComment(true);
-                }
-
-                // left join . count로 빼도 될 것 같은데.. 귀찮으니까 그냥 씀.
-                if (comment.getLikes().stream().filter(like -> like.getMember().equals(member)).count() > 0L) {
-                    data.setMyLike(true);
-                }
+                checkMine(comment, data, member);
             });
 
             return data;
@@ -289,8 +284,18 @@ public class ConfirmService {
 
     }
 
+    private static void checkMine(ConfirmComment comment, ConfirmDto.CommentData data, Member member) {
+        if (comment.getMember().equals(member)) {
+            data.setMyComment(true);
+        }
 
+        // left join . count로 빼도 될 것 같은데.. 귀찮으니까 그냥 씀.
+        if (comment.getLikes().stream().filter(like -> like.getMember().equals(member)).count() > 0L) {
+            data.setMyLike(true);
+        }
+    }
 
+    @Transactional
     public void likeComment(ConfirmDto.LikeCommentReq req) {
 
         Member auth = SecurityHolder.get();
@@ -311,6 +316,7 @@ public class ConfirmService {
         commentLikeRepository.save(like);
     }
 
+    @Transactional
     public void dislikeComment(ConfirmDto.LikeCommentReq req) {
 
         Member auth = SecurityHolder.get();

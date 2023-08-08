@@ -111,7 +111,7 @@ public class ConfirmDto {
         protected String registered;
 
         protected int like;
-        protected int nested;
+        protected long nested;
 
 
         public static CommentData from(ConfirmComment comment) {
@@ -143,6 +143,8 @@ public class ConfirmDto {
             vo.setUser(UserData.from(comment.getMember()));
             vo.setComment(comment.getContent());
             vo.setLike(comment.getLikes().size());
+            vo.setRegistered(DateTimeUtil.YMDHM.format(comment.getCreatedAt()));
+
             vo.setParentComment(CommentData.from(comment.getParentComment()));
 
             return vo;
